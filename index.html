@@ -1451,7 +1451,7 @@ function initMap(){
       layer=L.geoJSON(null,{style:s,onEachFeature:tooltipFn(c)});
     }
     lobj[c.id]=layer;
-    layerVisible[c.id]=!!c.on;
+    layerVisible[c.id] = c.on !== false;
     // Injecter les données déjà arrivées avant l'init de la carte
     if(c.pendingData){
       layer.addData(c.pendingData);
