@@ -1194,21 +1194,21 @@ const TYPE_ICON = {son:'son.svg', video:'video.svg', photo:'photo.svg', texte:'t
 // Couches GeoJSON — pour en ajouter une : une ligne ici + fichier dans RESSOURCES/COUCHES/GEOJSON/
 const LAYERS = [
   // weight:0 + stroke:false = aplat sans contour (défaut pour zones remplies)
-  {id:'cimetiere',  label:'Cimetière',             color:'#9B89B4', file:'cimetiere.geojson',
+  {id:'cimetiere',  label:'Cimetière',             color:'#9B89B4', on:false, file:'cimetiere.geojson',
    lstyle:{weight:1,stroke:true,color:'#9B89B4',fillColor:'#9B89B4',fillOpacity:.35}},
-  {id:'sport',      label:'Équipements sportifs',  color:'#E8A0A0', file:'equipements_sportifs.geojson',
+  {id:'sport',      label:'Équipements sportifs',  color:'#E8A0A0', on:false, file:'equipements_sportifs.geojson',
    lstyle:{weight:1,stroke:true,color:'#E8A0A0',fillColor:'#E8A0A0',fillOpacity:.35}},
-  {id:'forets',     label:'Forêts',                color:'#3D6B4F', file:'forets.geojson',
+  {id:'forets',     label:'Forêts',                color:'#3D6B4F', on:false, file:'forets.geojson',
    lstyle:{weight:1,stroke:true,color:'#3D6B4F',fillColor:'#3D6B4F',fillOpacity:.35}},
-  {id:'mounas',     label:'Mounas',                color:'#C8502A', on:true, file:'mounas.geojson',
+  {id:'mounas',     label:'Mounas',                color:'#C8502A', on:true,  file:'mounas.geojson',
    lstyle:{weight:1.5,stroke:true,color:'#C8502A',fillColor:'#C8502A',fillOpacity:.35}},
-  {id:'ressources', label:'Ressources & matériaux',color:'#B5834A', file:'ressources_et_materiaux.geojson',
+  {id:'ressources', label:'Ressources & matériaux',color:'#B5834A', on:false, file:'ressources_et_materiaux.geojson',
    lstyle:{weight:1,stroke:true,color:'#B5834A',fillColor:'#B5834A',fillOpacity:.35}},
-  {id:'sols',       label:'Sols construits',       color:'#AAAAAA',                                   // fichier à venir
+  {id:'sols',       label:'Sols construits',       color:'#AAAAAA', on:false,                         // fichier à venir
    lstyle:{weight:1,stroke:true,color:'#AAAAAA',fillColor:'#AAAAAA',fillOpacity:.45}},
-  {id:'agricole',   label:'Terres agricoles',      color:'#C8B84A', on:true, file:'terres_agricoles.geojson',
-   lstyle:{weight:1,stroke:true,color:'#C8B84A',fillColor:'#C8B84A',fillOpacity:.35}},               // aplat solide (hachure SVG trop instable avec Leaflet)
-  {id:'topo',       label:'Topographie',           color:'#8B6914', file:'topographie.geojson',
+  {id:'agricole',   label:'Terres agricoles',      color:'#C8B84A', on:false, file:'terres_agricoles.geojson',
+   lstyle:{weight:1,stroke:true,color:'#C8B84A',fillColor:'#C8B84A',fillOpacity:.35}},
+  {id:'topo',       label:'Topographie',           color:'#8B6914', on:false, file:'topographie.geojson',
    lstyle:{weight:1,stroke:true,color:'#8B6914',dashArray:'4 6',fillOpacity:0,fill:false}},
   {id:'ferree',     label:'Voie ferrée',            color:'#333333',                                   // fichier à venir
    lstyle:{weight:3,stroke:true,color:'#333333',dashArray:'10 4',fillOpacity:0,fill:false}},
