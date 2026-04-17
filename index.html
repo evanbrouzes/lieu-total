@@ -1,0 +1,2055 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Lieu Total — Tence</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link href="https://api.fontshare.com/v2/css?f[]=karrik@400,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #111111;
+  --ink2: #666666;
+  --border: rgba(0,0,0,0.1);
+  --glass-bg: rgba(255,255,255,0.75);
+  --glass-border: rgba(255,255,255,0.55);
+  --glass-shadow: 0 8px 32px rgba(0,0,0,0.13), 0 1px 0 rgba(255,255,255,0.7) inset;
+  --f: 'Karrik', sans-serif;
+  /* Système typographique — 3 tailles uniquement */
+  --fs-lg: clamp(56px, 9vw, 110px); /* titres de pages */
+  --fs-md: 13px;                     /* boutons, labels, corps */
+  --fs-sm: 11px;                     /* légendes, infos secondaires */
+  /* ─── Référence d'espacement ───────────────────────────────────────────
+     --gap       : espace bord bas → tap bar  =  bord droit → contrôles
+     --nav-pill-h: hauteur interne d'un pill nav (icône 18 + padding 9+9)
+     --nav-outer-h: hauteur totale de la tap bar (pill + padding conteneur 5+5)
+  ──────────────────────────────────────────────────────────────────────── */
+  --gap:          28px;
+  --nav-pill-h:   36px;
+  --nav-outer-h:  46px;
+}
+* { margin:0; padding:0; box-sizing:border-box; outline:none; }
+html,body { height:100%; font-family:var(--f); background:var(--bg); color:var(--ink); overflow:hidden; }
+
+/* === LOGO === */
+#logo {
+  position:fixed; top:20px; left:24px; z-index:2000;
+  display:flex; align-items:center; gap:10px; pointer-events:auto; cursor:pointer;
+}
+#logo-wordmark { font-size:21px; font-weight:700; letter-spacing:-.03em; color:var(--ink); }
+
+/* === NAV === */
+#nav-float {
+  position:fixed; bottom:28px; left:50%; transform:translateX(-50%);
+  z-index:2000;
+  display:flex; align-items:center; gap:2px;
+  background:var(--glass-bg);
+  backdrop-filter:blur(24px) saturate(180%);
+  -webkit-backdrop-filter:blur(24px) saturate(180%);
+  border:1px solid var(--glass-border);
+  box-shadow:var(--glass-shadow);
+  border-radius:100px;
+  padding:5px 6px;
+}
+.npill {
+  display:flex; align-items:center; gap:6px;
+  padding:9px 18px; border-radius:100px; border:none; background:none;
+  font-family:var(--f); font-size:var(--fs-md); font-weight:700; letter-spacing:.01em;
+  color:var(--ink2); cursor:pointer;
+  /* color/background héritent de all .2s ease ; transform a son propre timing plus court */
+  transition:color .2s ease, background .2s ease, transform .12s cubic-bezier(.4,0,.2,1);
+  white-space:nowrap;
+}
+.npill:hover { color:var(--ink); }
+.npill.active { background:var(--ink); color:#fff; }
+/* Effet de pression — uniquement sur les onglets non actifs */
+.npill:not(.active):hover  { transform:scale(0.93); }
+.npill:not(.active):active { transform:scale(0.88); }
+.nav-icon { display:block; width:18px; height:18px; flex-shrink:0; }
+/* fallback si icône absente */
+.icon-slot { width:13px; height:13px; border:1.5px dashed rgba(0,0,0,.2); border-radius:2px; flex-shrink:0; }
+
+/* === BOUTON ADMIN === */
+#btn-admin {
+  position:fixed; top:20px; right:var(--gap); z-index:2000;
+  font-family:var(--f); font-size:var(--fs-md); font-weight:700;
+  letter-spacing:.01em;
+  background:var(--glass-bg);
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  border:1px solid var(--glass-border);
+  box-shadow:var(--glass-shadow);
+  border-radius:100px; padding:10px 20px;
+  cursor:pointer; color:var(--ink);
+  transition:all .2s;
+}
+#btn-admin:hover,#btn-admin.active { background:var(--ink); color:#fff; border-color:var(--ink); box-shadow:0 4px 14px rgba(0,0,0,.22); }
+#btn-admin:focus, #btn-admin:focus-visible { outline:none; box-shadow:0 4px 14px rgba(0,0,0,.22); }
+
+/* === PAGES === */
+.page { display:none; width:100%; height:100vh; }
+.page.active { display:flex; flex-direction:column; overflow:hidden; }
+.pg-body {
+  flex:1; display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:32px;
+}
+.pg-body h2 { font-size:var(--fs-lg); font-weight:700; letter-spacing:-.04em; line-height:.9; }
+.pg-body p { font-size:var(--fs-sm); color:var(--ink2); margin-top:8px; }
+
+/* Pages secondaires */
+.pg-scroll { flex:1; overflow-y:auto; position:relative; }
+.pg-hero { display:flex; align-items:flex-start; justify-content:flex-start; min-height:40vh; padding:80px 40px 40px; }
+.pg-title { font-size:var(--fs-lg); font-weight:700; letter-spacing:-.04em; line-height:.9; }
+.pg-content { padding:0 40px 80px; max-width:720px; margin:0 auto; }
+
+/* ── Page Pratiques : hero centré plein écran au chargement ─────────────────
+   Le titre occupe 100vh centré, exactement comme Maison/Hameau.
+   Il disparaît naturellement avec l'effet vague quand on scroll.
+──────────────────────────────────────────────────────────────────────────── */
+#page-pratiques .pg-hero {
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+}
+
+/* ── Dégradés blanc haut/bas — page Pratiques uniquement ───────────────────
+   Deux éléments fixed, pointer-events:none, z-index 999 (sous la nav)
+   Visibles uniquement quand la page Pratiques est active
+──────────────────────────────────────────────────────────────────────────── */
+.pratiques-fade {
+  position:fixed; left:0; right:0;
+  pointer-events:none; z-index:999;
+  opacity:0;
+  transition:opacity .35s ease;
+}
+.pratiques-fade.visible { opacity:1; }
+.pratiques-fade-top {
+  top:0; height:120px;
+  background:linear-gradient(to bottom, #ffffff 0%, transparent 100%);
+}
+.pratiques-fade-bot {
+  bottom:0; height:120px;
+  background:linear-gradient(to top, #ffffff 0%, transparent 100%);
+}
+
+/* Pages Pratiques — alignement gauche */
+.pratiques-content { text-align:left; }
+.prat-sec { margin-bottom:56px; }
+.prat-h { font-size:clamp(28px,4vw,42px); font-weight:700; letter-spacing:-.03em; margin-bottom:24px; color:var(--ink); }
+.prat-list { list-style:none; padding:0; display:flex; flex-direction:column; gap:16px; }
+.prat-list li { font-size:15px; line-height:1.7; color:var(--ink2); display:flex; align-items:flex-start; gap:10px; text-align:left; }
+.prat-icon { flex-shrink:0; margin-top:4px; }
+
+/* ── Effet vague scroll (IntersectionObserver) ──────────────────────────────
+   État initial : invisible, monte depuis le bas (scale réduit)
+   wave-in  : visible, position et taille normales
+   wave-out : invisible, sort par le haut (scale réduit)
+─────────────────────────────────────────────────────────────────────────── */
+.wave-block {
+  opacity:0;
+  transform:translateY(30px) scale(0.92);
+  transition:opacity .45s ease, transform .45s ease;
+  will-change:transform, opacity;
+}
+/* wave-in / wave-out restent déclarés pour compatibilité — l'observer utilise des styles inline */
+.wave-block.wave-in  { opacity:1; transform:translateY(0) scale(1); }
+.wave-block.wave-out { opacity:0; transform:translateY(-30px) scale(0.92); }
+
+/* === FLÈCHE TOMBANTE — page Pratiques ========================================
+   Blanche avec mix-blend-mode:difference → inverse les couleurs sous elle
+   (texte noir "Pratiques" devient blanc quand la flèche passe dessus)
+   L'animation est pilotée entièrement en JS (inline style transforms)
+============================================================================= */
+#pratiques-arrow {
+  position: fixed;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%) translateY(-1220px);
+  z-index: 9000;
+  pointer-events: none;
+  display: none;
+  mix-blend-mode: difference;
+  will-change: transform;
+}
+
+/* === CARTE === */
+#page-carte { position:relative; overflow:hidden; }
+#map { position:absolute; inset:0; background:#e8e4de; }
+
+/* === LEAFLET === */
+.leaflet-container { font-family:var(--f); }
+.leaflet-control-zoom {
+  background:var(--glass-bg)!important;
+  backdrop-filter:blur(20px)!important;
+  -webkit-backdrop-filter:blur(20px)!important;
+  border:1px solid var(--glass-border)!important;
+  box-shadow:var(--glass-shadow)!important;
+  border-radius:100px!important; overflow:hidden;
+}
+.leaflet-control-zoom a {
+  font-family:var(--f)!important; font-weight:700!important; font-size:17px!important;
+  color:var(--ink)!important; background:transparent!important;
+  border:none!important;
+  /* Même hauteur que la tap bar */
+  width:var(--nav-outer-h)!important;
+  height:var(--nav-outer-h)!important;
+  line-height:var(--nav-outer-h)!important;
+  display:block; transition:background .15s;
+}
+.leaflet-control-zoom a:hover { background:rgba(0,0,0,.07)!important; }
+.leaflet-control-zoom-in { border-bottom:1px solid var(--border)!important; }
+.leaflet-top,.leaflet-bottom { z-index:800!important; }
+.leaflet-control-attribution { display:none; }
+
+/* === PANEL CALQUE + MÉDIA === */
+#layers-panel {
+  position:absolute; top:72px; left:24px; z-index:900;
+  background:var(--glass-bg);
+  backdrop-filter:blur(24px) saturate(180%);
+  -webkit-backdrop-filter:blur(24px) saturate(180%);
+  border:1px solid var(--glass-border);
+  box-shadow:var(--glass-shadow);
+  border-radius:20px; min-width:220px; overflow:hidden;
+}
+/* Onglets Calque / Média */
+.lp-tabs { display:flex; padding:6px; gap:2px; border-bottom:1px solid var(--border); }
+.lp-tab {
+  flex:1; font-family:var(--f); font-size:var(--fs-md); font-weight:700; letter-spacing:.01em;
+  padding:8px 12px; border:none; background:none; border-radius:100px;
+  color:var(--ink2); cursor:pointer;
+  transition:background .18s, color .18s;
+}
+.lp-tab:hover { color:var(--ink); }
+.lp-tab.active { background:var(--ink); color:#fff; }
+/* Lignes de liste (couches et filtre médias) */
+.li {
+  display:flex; align-items:center; gap:10px; padding:9px 14px;
+  cursor:pointer; border-bottom:1px solid var(--border);
+  color:var(--ink); width:100%; text-align:left;
+  font-family:var(--f); border-radius:0;
+}
+.li:last-child { border-bottom:none; }
+.ldot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.mf-btn { border:none; background:none; box-shadow:none; border-radius:0; padding:9px 14px; }
+.ln { font-size:12px; font-weight:400; flex:1; }
+/* Icônes SVG dans la section Médias du panneau gauche */
+/* Inactif : gris clair #BBBBBB → opacity(0.27) sur noir = rgb(187,187,187) */
+.mf-icon { width:16px; height:16px; object-fit:contain; flex-shrink:0; filter:brightness(0) opacity(0.27); transition:filter .18s; }
+/* Actif (toggle on) : noir #111 */
+.mf-btn.on .mf-icon { filter:brightness(0); }
+/* Toggle pill iOS */
+.li-toggle { width:36px; height:20px; background:#e0e0e0; border-radius:100px; position:relative; flex-shrink:0; margin-left:auto; transition:background .2s ease; pointer-events:none; }
+.li-toggle-knob { position:absolute; top:3px; left:3px; width:14px; height:14px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25); transition:transform .2s ease; }
+.li.on .li-toggle { background:#111; }
+.li.on .li-toggle-knob { transform:translateX(16px); }
+
+/* === MARQUEURS === */
+@keyframes wv { 0%,100%{height:3px} 50%{height:14px} }
+
+/* === POPUP HOVER === */
+.leaflet-popup-content-wrapper {
+  background:#fff!important;
+  border:1px solid rgba(0,0,0,.09)!important;
+  border-radius:12px!important;
+  box-shadow:0 12px 40px rgba(0,0,0,.14)!important;
+  padding:0!important; overflow:hidden;
+  min-width:230px!important; max-width:270px!important;
+}
+.leaflet-popup-content { margin:0!important; width:100%!important; }
+.leaflet-popup-tip-container { display:none!important; }
+.leaflet-popup-close-button { display:none!important; }
+
+.ph-caption { font-size:var(--fs-md); font-weight:700; color:var(--ink); margin-bottom:3px; }
+.ph-type { font-size:var(--fs-sm); font-weight:400; letter-spacing:.02em; color:var(--ink2); }
+.ph-sound { background:var(--ink); padding:14px 16px; }
+.ph-wave { display:flex; align-items:center; gap:2px; height:22px; }
+.wbar { flex:1; background:rgba(255,255,255,.35); border-radius:1px; animation:wv 1.4s ease-in-out infinite; }
+.wbar:nth-child(2n){animation-delay:.12s}
+.wbar:nth-child(3n){animation-delay:.24s}
+.wbar:nth-child(5n){animation-delay:.36s}
+
+/* Mounas popup — fond blanc identique aux autres */
+.mp-in { padding:0; }
+.mp-lbl { font-size:var(--fs-md); font-weight:700; letter-spacing:.02em; color:var(--ink); padding:14px 16px 8px; display:block; }
+.mp-lk {
+  display:flex; align-items:center; gap:10px; padding:10px 16px;
+  border-bottom:1px solid var(--border); cursor:pointer;
+  transition:background .18s, color .18s;
+  color:var(--ink); text-decoration:none; border:none; background:none;
+}
+.mp-lk:last-child { border-bottom:none; }
+.mp-lk:hover { background:var(--ink); color:#fff; }
+.mp-lk:hover .mp-arr { color:rgba(255,255,255,.45); }
+a.mp-lk { color:var(--ink); text-decoration:none; }
+.mp-lk-n { font-size:12px; font-weight:400; flex:1; }
+.mp-arr { font-size:16px; color:var(--ink2); transition:color .18s; }
+
+/* === LIGHTBOX === */
+#lightbox { position:fixed; inset:0; z-index:3000; display:none; align-items:center; justify-content:center; }
+#lightbox.open { display:flex; }
+#lb-bg { position:absolute; inset:0; background:rgba(0,0,0,0); backdrop-filter:blur(0px); transition:background .35s,backdrop-filter .35s; cursor:pointer; }
+#lightbox.open #lb-bg { background:rgba(0,0,0,.55); backdrop-filter:blur(18px); }
+#lb-box {
+  position:relative; z-index:1; background:#fff; border-radius:16px; overflow:hidden;
+  max-width:min(580px,92vw); width:100%; max-height:88vh;
+  display:flex; flex-direction:column;
+  opacity:0; transform:scale(.94) translateY(12px);
+  transition:opacity .3s,transform .3s;
+  box-shadow:0 32px 80px rgba(0,0,0,.3);
+}
+#lightbox.open #lb-box { opacity:1; transform:scale(1) translateY(0); }
+#lb-media { flex:1; min-height:160px; max-height:62vh; overflow:hidden; background:#111; display:flex; align-items:center; justify-content:center; }
+#lb-media img { width:100%; height:100%; object-fit:contain; display:block; }
+#lb-media video { width:100%; max-height:62vh; display:block; }
+#lb-sound { background:#111; padding:32px 28px; display:flex; flex-direction:column; gap:18px; }
+#lb-play { width:50px; height:50px; border-radius:50%; background:#fff; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:transform .15s; flex-shrink:0; }
+#lb-play:hover { transform:scale(1.07); }
+#lb-row { display:flex; align-items:center; gap:16px; }
+#lb-wf { display:flex; align-items:center; gap:2px; height:40px; flex:1; }
+.lbwb { flex:1; background:rgba(255,255,255,.25); border-radius:1px; animation:wv 1.4s ease-in-out infinite; }
+.lbwb:nth-child(2n){animation-delay:.1s}
+.lbwb:nth-child(3n){animation-delay:.2s}
+.lbwb:nth-child(5n){animation-delay:.3s}
+#lb-txt { padding:28px; font-size:var(--fs-md); line-height:1.8; color:var(--ink); background:#fafafa; max-height:55vh; overflow-y:auto; }
+#lb-cap { padding:16px 22px 20px; border-top:1px solid rgba(0,0,0,.07); }
+#lb-cap-text { font-size:var(--fs-md); color:var(--ink2); line-height:1.5; }
+#lb-cap-type { font-size:var(--fs-sm); font-weight:400; letter-spacing:.02em; color:rgba(0,0,0,.35); margin-top:4px; }
+#lb-close { position:absolute; top:14px; right:14px; width:30px; height:30px; border-radius:50%; background:rgba(0,0,0,.5); border:none; cursor:pointer; color:#fff; font-size:17px; display:flex; align-items:center; justify-content:center; z-index:10; transition:background .15s; }
+#lb-close:hover { background:rgba(0,0,0,.8); }
+
+/* === ADMIN === */
+#admin-panel {
+  position:fixed; top:80px; right:var(--gap);
+  bottom:var(--gap); /* ← alignement bas sur le bas de la tap bar */
+  width:320px;
+  max-height:calc(100vh - 80px - var(--gap));
+  background:var(--glass-bg);
+  backdrop-filter:blur(24px) saturate(180%);
+  -webkit-backdrop-filter:blur(24px) saturate(180%);
+  border:1px solid var(--glass-border);
+  box-shadow:var(--glass-shadow);
+  border-radius:20px;
+  z-index:1900;
+  display:flex; flex-direction:column; overflow:hidden;
+  /* Animation fade + scale depuis le bouton en haut à droite */
+  opacity:0; transform:scale(0.92) translateY(-8px);
+  transform-origin:top right;
+  pointer-events:none;
+  transition:opacity .22s cubic-bezier(.4,0,.2,1), transform .22s cubic-bezier(.4,0,.2,1);
+}
+#admin-panel.open {
+  opacity:1; transform:scale(1) translateY(0);
+  pointer-events:auto;
+}
+.ah { padding:20px 22px 16px; border-bottom:1px solid var(--border); flex-shrink:0; }
+.at { font-size:var(--fs-md); font-weight:700; letter-spacing:.01em; }
+.as { font-size:var(--fs-md); color:var(--ink2); margin-top:3px; }
+
+#a-login { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px 22px; gap:11px; overflow-y:auto; }
+.al-lbl { font-size:var(--fs-md); color:var(--ink2); text-align:center; line-height:1.5; }
+.a-pw { font-family:var(--f); font-size:var(--fs-md); width:100%; padding:11px 14px; border:1px solid var(--border); background:rgba(255,255,255,.55); color:var(--ink); outline:none; border-radius:8px; letter-spacing:.04em; }
+.a-pw:focus { border-color:var(--ink); background:#fff; }
+.a-err { font-size:var(--fs-sm); color:#c0392b; display:none; }
+.abtn { font-family:var(--f); font-size:var(--fs-md); font-weight:700; letter-spacing:.01em; padding:12px 20px; border:none; background:var(--ink); color:#fff; cursor:pointer; border-radius:8px; width:100%; transition:opacity .15s; }
+.abtn:hover { opacity:.8; }
+.abtn.sec { background:none; color:var(--ink); border:1px solid var(--border); }
+.abtn.sec:hover { background:var(--ink); color:#fff; }
+
+#a-content { flex:1; overflow-y:auto; padding:20px; display:none; flex-direction:column; gap:15px; }
+#a-content.vis { display:flex; }
+
+.a-sec { font-size:var(--fs-md); font-weight:700; letter-spacing:.02em; color:var(--ink); margin-bottom:5px; }
+.a-fld { display:flex; flex-direction:column; gap:5px; }
+.a-fld label { font-size:12px; font-weight:700; letter-spacing:.01em; color:var(--ink); }
+.a-in { font-family:var(--f); font-size:var(--fs-md); padding:10px 12px; border:1px solid var(--border); background:rgba(255,255,255,.55); color:var(--ink); outline:none; border-radius:8px; width:100%; }
+.a-in:focus { border-color:var(--ink); background:#fff; }
+textarea.a-in { resize:vertical; min-height:80px; }
+
+.tpills { display:flex; flex-wrap:wrap; gap:6px; }
+.tp { font-family:var(--f); font-size:var(--fs-md); font-weight:700; padding:6px 14px; border-radius:100px; border:1.5px solid var(--border); background:none; color:var(--ink2); cursor:pointer; transition:all .15s; }
+.tp:hover { border-color:var(--ink); color:var(--ink); }
+.tp.on { background:var(--ink); border-color:var(--ink); color:#fff; }
+
+.a-drop { border:1.5px dashed var(--border); border-radius:8px; padding:22px 14px; text-align:center; cursor:pointer; position:relative; transition:border-color .15s; background:rgba(255,255,255,.4); }
+.a-drop:hover { border-color:var(--ink); }
+.a-drop input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+.a-drop-lbl { font-size:var(--fs-sm); color:var(--ink2); }
+.a-drop-lbl strong { display:block; font-size:var(--fs-md); color:var(--ink); margin-bottom:2px; font-weight:700; }
+.a-fn { font-size:var(--fs-sm); color:var(--ink); margin-top:6px; font-weight:400; display:none; }
+
+.a-sep { border:none; border-top:1px solid var(--border); }
+.a-note { font-size:var(--fs-sm); color:var(--ink2); background:rgba(0,0,0,.05); border-radius:8px; padding:10px 12px; line-height:1.5; }
+
+.ml { display:flex; flex-direction:column; gap:6px; }
+.mi { display:flex; align-items:center; gap:8px; padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:rgba(255,255,255,.5); font-size:12px; }
+.mi-d { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.mi-n { flex:1; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:400; }
+.mi-t { font-size:var(--fs-sm); color:var(--ink2); letter-spacing:.04em; }
+.mi-x { background:none; border:none; cursor:pointer; color:var(--ink2); font-size:16px; line-height:1; transition:color .15s; padding:0 2px; }
+.mi-x:hover { color:#c0392b; }
+.mi-e { background:none; border:none; cursor:pointer; color:var(--ink2); font-size:14px; line-height:1; transition:color .15s; padding:0 4px; }
+.mi-e:hover { color:var(--ink); }
+
+/* === PLACEMENT BAR === */
+#pbar {
+  position:fixed;
+  bottom:calc(var(--gap) + var(--nav-outer-h) + var(--gap));
+  left:50%; transform:translateX(-50%);
+  background:var(--ink); color:#fff; padding:12px 24px; border-radius:100px;
+  font-size:var(--fs-md); font-weight:700; letter-spacing:.02em;
+  display:none; align-items:center; gap:16px;
+  z-index:2500; box-shadow:0 8px 32px rgba(0,0,0,.22);
+}
+#pbar.on { display:flex; }
+.pcancel { font-family:var(--f); font-size:var(--fs-sm); font-weight:700; padding:6px 14px; border-radius:100px; border:1.5px solid rgba(255,255,255,.3); background:none; color:#fff; cursor:pointer; transition:all .15s; }
+.pcancel:hover { background:rgba(255,255,255,.15); }
+
+/* === TOAST === */
+#toast { position:fixed;
+  bottom:calc(var(--gap) + var(--nav-outer-h) + var(--gap));
+  right:var(--gap); background:var(--ink); color:#fff; padding:12px 20px; border-radius:100px; font-size:var(--fs-md); font-weight:700; z-index:4000; opacity:0; transform:translateY(8px); transition:all .25s; pointer-events:none; }
+#toast.on { opacity:1; transform:translateY(0); }
+
+/* Icône type dans la liste admin (remplace le point coloré) */
+.mi-icon { width:16px; height:16px; object-fit:contain; flex-shrink:0; filter:brightness(0) opacity(.55); }
+/* Badge compteur de médias dans la liste admin */
+.mi-cnt { font-size:9px; font-weight:700; background:var(--ink); color:#fff; border-radius:50%; width:15px; height:15px; display:flex; align-items:center; justify-content:center; flex-shrink:0; line-height:1; }
+
+/* Liste de fichiers en attente dans le formulaire admin */
+#pending-media-list { display:flex; flex-direction:column; margin-top:6px; }
+.pm-item { display:flex; align-items:center; gap:8px; padding:6px 10px; background:rgba(0,0,0,.04); border-radius:6px; margin-top:4px; }
+.pm-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--ink); font-size:11px; }
+.pm-rm { background:none; border:none; cursor:pointer; color:var(--ink2); font-size:14px; padding:0 2px; line-height:1; transition:color .15s; }
+.pm-rm:hover { color:#c0392b; }
+
+/* Lightbox — boutons navigation multi-médias */
+.lb-nav {
+  position:absolute; top:50%; transform:translateY(-50%);
+  width:34px; height:34px; border-radius:50%;
+  background:rgba(0,0,0,.42); border:none; cursor:pointer;
+  color:#fff; font-size:18px; z-index:10;
+  display:none; align-items:center; justify-content:center;
+  transition:background .15s;
+}
+.lb-nav:hover { background:rgba(0,0,0,.78); }
+.lb-nav:disabled { opacity:.22; cursor:default; }
+#lb-prev { left:10px; }
+#lb-next { right:10px; }
+/* Indicateur de position "1 / 3" */
+#lb-counter { font-size:var(--fs-sm); color:rgba(0,0,0,.35); text-align:center; margin-top:5px; letter-spacing:.05em; display:none; }
+
+/* SCROLL */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(0,0,0,.13); border-radius:2px; }
+
+/* === SPLASH / PAGE D'ACCUEIL === */
+#splash {
+  position:fixed; inset:0; z-index:9998;
+  background:#fff;
+  display:flex; align-items:center; justify-content:center;
+}
+#splash-inner {
+  display:flex; flex-direction:column; align-items:center; gap:40px;
+}
+/* Logo + titre empilés verticalement, centrés */
+#splash-logo-group {
+  display:flex; flex-direction:column; align-items:center; gap:16px;
+  /* transform géré par JS pour l'animation FLIP */
+}
+#splash-logo-group img { width:80px; height:80px; display:block; }
+#splash-wordmark {
+  font-size:var(--fs-lg); font-weight:700;
+  letter-spacing:-.04em; line-height:.9;
+  color:var(--ink); white-space:nowrap;
+}
+/* Formulaire mot de passe */
+#splash-pw-wrap {
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  width:clamp(240px, 30vw, 300px);
+}
+#splash-pw {
+  font-family:var(--f); font-size:var(--fs-md);
+  width:100%; padding:12px 16px;
+  border:1.5px solid var(--border); border-radius:8px;
+  background:#fff; color:var(--ink); outline:none;
+  text-align:center; letter-spacing:.06em;
+  transition:border-color .15s;
+}
+#splash-pw:focus { border-color:var(--ink); }
+#splash-pw.err   { border-color:#c0392b; }
+#splash-err {
+  font-size:var(--fs-sm); color:#c0392b;
+  display:none; letter-spacing:.01em;
+}
+#splash-btn {
+  font-family:var(--f); font-size:var(--fs-md); font-weight:700;
+  letter-spacing:.01em; padding:12px 32px;
+  border:none; background:var(--ink); color:#fff;
+  border-radius:8px; cursor:pointer; width:100%;
+  transition:opacity .15s;
+}
+#splash-btn:hover { opacity:.8; }
+
+/* ── Lettres splash : physique individuelle + tremblement survol ────────── */
+@keyframes splash-shake {
+  0%,100% { transform:translate(0,0) rotate(0deg); }
+  15%     { transform:translate(1px,-1px) rotate(-.5deg); }
+  30%     { transform:translate(-1px,1px) rotate(.5deg); }
+  45%     { transform:translate(2px,0) rotate(-.3deg); }
+  60%     { transform:translate(-1px,-1px) rotate(.3deg); }
+  75%     { transform:translate(1px,1px) rotate(-.2deg); }
+  90%     { transform:translate(-1px,0) rotate(.1deg); }
+}
+/* Chaque lettre est un inline-block indépendant */
+.sl { display:inline-block; cursor:pointer; }
+/* Espace entre mots — conserve sa largeur même si rendu invisible */
+.sl-sp { min-width:0.28em; }
+/* Logo image splash aussi cliquable */
+#splash-logo-img { display:block; cursor:pointer; }
+/* Classe ajoutée/retirée par JS au survol */
+.sl.shaking, #splash-logo-img.shaking {
+  animation:splash-shake .3s ease forwards;
+}
+
+@media(max-width:640px){
+  #splash-logo-group img { width:56px; height:56px; }
+  #splash-pw-wrap { width:calc(100vw - 64px); }
+}
+
+/* ── Zoom Leaflet — indépendant du bouton œil ───────────────────────────
+   Le zoom est géré par Leaflet et positionné au-dessus du bouton œil fixe.
+   bottom = gap + hauteur_œil + gap = deux fois le gap + une nav-outer-h
+──────────────────────────────────────────────────────────────────────── */
+.leaflet-bottom.leaflet-right {
+  bottom: calc(var(--gap) * 2 + var(--nav-outer-h)) !important;
+  right: var(--gap) !important;
+  transition: right .22s cubic-bezier(.4,0,.2,1);
+}
+/* Annule les marges par défaut de Leaflet sur tous les contrôles */
+.leaflet-bottom.leaflet-right .leaflet-control {
+  margin-bottom: 0 !important;
+  margin-right:  0 !important;
+}
+/* Déplacement horizontal quand le panneau admin est ouvert */
+body.admin-open .leaflet-bottom.leaflet-right {
+  right: calc(320px + var(--gap) + 12px) !important;
+}
+@media(max-width:640px){
+  body.admin-open .leaflet-bottom.leaflet-right { right: var(--gap) !important; }
+}
+
+/* ── BOUTON ŒIL — position fixed totalement indépendante de Leaflet ──────
+   Aligné sur le bord droit à --gap, bas aligné sur le bas de la tap bar.
+   Jamais dans un conteneur commun avec le zoom.
+──────────────────────────────────────────────────────────────────────── */
+#eye-btn-fixed {
+  position: fixed;
+  right: var(--gap);
+  bottom: var(--gap);
+  z-index: 800;
+  display: none; /* affiché uniquement sur la page Carte via navTo() */
+  align-items: center;
+  justify-content: center;
+  width: var(--nav-outer-h);
+  height: var(--nav-outer-h);
+  border-radius: 100px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  cursor: pointer;
+  color: var(--ink);
+  transition: background .2s, color .2s, border-color .2s,
+              right .22s cubic-bezier(.4,0,.2,1);
+}
+#eye-btn-fixed:hover { background: rgba(0,0,0,.07); box-shadow: 0 4px 14px rgba(0,0,0,.18); }
+#eye-btn-fixed.eye-on { background: var(--ink); color: #fff; border-color: var(--ink); box-shadow: 0 4px 14px rgba(0,0,0,.22); }
+#eye-btn-fixed:focus, #eye-btn-fixed:focus-visible { outline: none; }
+#eye-btn-fixed img { width: 18px; height: 18px; display: block; filter: brightness(0); transition: filter .2s; }
+#eye-btn-fixed.eye-on img { filter: brightness(0) invert(1); }
+body.admin-open #eye-btn-fixed { right: calc(320px + var(--gap) + 12px); }
+@media(max-width:640px){ body.admin-open #eye-btn-fixed { right: var(--gap); } }
+
+
+/* === CURSEUR CUSTOM === */
+#cursor {
+  position:fixed; top:0; left:0;
+  width:20px; height:20px; border-radius:50%;
+  background:#fff; mix-blend-mode:difference;
+  pointer-events:none; z-index:9999;
+  opacity:0; /* visible dès le 1er mousemove via JS */
+  display:none; /* activé uniquement sur pointer:fine ci-dessous */
+  will-change:transform;
+  transition:width .15s ease, height .15s ease, opacity .2s ease;
+}
+#cursor.big { width:32px; height:32px; }
+/* Souris réelle → curseur custom actif */
+@media(pointer:fine) {
+  * { cursor:none !important; }
+  #cursor { display:block; }
+}
+/* Écran tactile → curseur natif rétabli, rond masqué */
+@media(pointer:coarse) {
+  * { cursor:auto !important; }
+  #cursor { display:none !important; }
+}
+
+/* === MOBILE === */
+@media(max-width:640px){
+  #nav-float { bottom:16px; padding:4px 5px; gap:0; }
+  .npill { padding:8px 11px; font-size:var(--fs-sm); gap:4px; }
+  .icon-slot { display:none; }
+  #logo-wordmark { font-size:15px; }
+  #layers-panel { top:62px; left:12px; min-width:185px; }
+  .ln { font-size:var(--fs-sm); }
+  #btn-admin { padding:8px 14px; font-size:var(--fs-sm); right:12px; }
+  #lb-box { max-width:96vw; }
+  /* Mobile : fenêtre admin pleine largeur, bas aligné sur le haut de la nav */
+  #admin-panel {
+    width:calc(100% - 24px); right:12px; left:12px;
+    top:auto;
+    bottom:calc(var(--nav-outer-h) + var(--gap));
+    max-height:calc(100vh - var(--nav-outer-h) - var(--gap) * 2 - 64px);
+    transform-origin:bottom center;
+    transform:scale(0.94) translateY(12px);
+  }
+  #admin-panel.open { transform:scale(1) translateY(0); }
+}
+</style>
+</head>
+<body>
+
+<!-- SPLASH / PAGE D'ACCUEIL ─────────────────────────────────────────────── -->
+<div id="splash">
+  <div id="splash-inner">
+    <!-- Logo + titre : mêmes éléments que #logo, affichés en grand centré -->
+    <div id="splash-logo-group">
+      <img id="splash-logo-img" src="icons/logo.svg" width="80" height="80" alt="Logo Lieu Total">
+      <div id="splash-wordmark"><span class="sl">L</span><span class="sl">i</span><span class="sl">e</span><span class="sl">u</span><span class="sl sl-sp"> </span><span class="sl">T</span><span class="sl">o</span><span class="sl">t</span><span class="sl">a</span><span class="sl">l</span></div>
+    </div>
+    <!-- Formulaire mot de passe -->
+    <div id="splash-pw-wrap">
+      <input type="password" id="splash-pw" placeholder="Mot de passe" autocomplete="off">
+      <div id="splash-err">Mot de passe incorrect</div>
+      <button id="splash-btn">Accéder</button>
+    </div>
+  </div>
+</div>
+
+<div id="cursor"></div>
+
+<!-- LOGO -->
+<div id="logo">
+  <img src="icons/logo.svg" width="32" height="32" alt="Logo Lieu Total" style="display:block;">
+  <div id="logo-wordmark">Lieu Total</div>
+</div>
+
+<!-- NAV GLASS -->
+<nav id="nav-float">
+  <button class="npill active" data-page="pratiques"><svg class="nav-icon" viewBox="0 0 640 640" fill="currentColor" aria-hidden="true"><path d="M320.002,105.415l254.534,440.963H65.464L320.002,105.415M320,369.992c24.353,0,44.095-19.743,44.095-44.097s-19.743-44.097-44.095-44.097-44.095,19.743-44.095,44.097,19.74,44.097,44.095,44.097M320.002,40.454c-23.21,0-44.657,12.384-56.26,32.485L9.204,513.902c-11.602,20.099-11.6,44.861.004,64.958,11.604,20.097,33.049,32.478,56.256,32.478h509.072c23.207,0,44.652-12.381,56.256-32.478,11.604-20.097,11.606-44.859.005-64.957L376.263,72.94c-11.603-20.102-33.05-32.486-56.26-32.486h0Z"/></svg>Pratiques</button>
+  <button class="npill" data-page="carte"><svg class="nav-icon" viewBox="0 0 640 640" fill="currentColor" aria-hidden="true"><path d="M540.19,105.415v440.963H99.228V105.415h440.962M319.71,369.992c24.353,0,44.095-19.742,44.095-44.096s-19.743-44.097-44.095-44.097-44.095,19.743-44.095,44.097,19.741,44.096,44.095,44.096M540.19,40.454H99.228c-35.877,0-64.961,29.084-64.961,64.961v440.963c0,35.877,29.084,64.961,64.961,64.961h440.962c35.877,0,64.961-29.084,64.961-64.961V105.415c0-35.877-29.084-64.961-64.961-64.961h0Z"/></svg>Carte</button>
+  <button class="npill" data-page="festival"><svg class="nav-icon" viewBox="0 0 640 640" fill="currentColor" aria-hidden="true"><path d="M320.001,105.415c121.769,0,220.48,98.712,220.48,220.481s-98.711,220.481-220.48,220.481-220.483-98.712-220.483-220.481,98.714-220.481,220.483-220.481M320,502.282c24.354,0,44.096-19.744,44.096-44.096s-19.742-44.096-44.096-44.096-44.096,19.741-44.096,44.096,19.742,44.096,44.096,44.096M320.001,40.454c-38.506,0-75.895,7.556-111.127,22.458-33.998,14.38-64.518,34.952-90.711,61.146-26.194,26.194-46.766,56.713-61.147,90.711-14.902,35.233-22.458,72.621-22.458,111.127s7.556,75.894,22.458,111.127c14.38,33.998,34.953,64.517,61.147,90.711,26.194,26.194,56.714,46.766,90.711,61.146,35.233,14.902,72.622,22.458,111.127,22.458s75.894-7.556,111.127-22.458c33.998-14.38,64.517-34.952,90.711-61.146,26.194-26.194,46.766-56.713,61.145-90.711,14.902-35.233,22.458-72.621,22.458-111.127s-7.556-75.894-22.458-111.127c-14.379-33.998-34.952-64.517-61.145-90.711-26.193-26.194-56.713-46.766-90.711-61.146-35.233-14.902-72.621-22.458-111.127-22.458h0Z"/></svg>Festival</button>
+  <button class="npill" data-page="maison"><svg class="nav-icon" viewBox="0 0 640 640" fill="currentColor" aria-hidden="true"><path d="M320.001,105.415c121.769,0,220.48,98.712,220.48,220.481s-98.711,220.481-220.48,220.481-220.483-98.712-220.483-220.481,98.714-220.481,220.483-220.481M320,369.992c24.354,0,44.096-19.744,44.096-44.096s-19.743-44.096-44.096-44.096-44.096,19.741-44.096,44.096,19.742,44.096,44.096,44.096M320,502.282c24.354,0,44.096-19.744,44.096-44.096s-19.743-44.096-44.096-44.096-44.096,19.741-44.096,44.096,19.742,44.096,44.096,44.096M320.001,40.454c-38.506,0-75.895,7.556-111.127,22.458-33.998,14.38-64.518,34.952-90.711,61.146-26.194,26.194-46.766,56.713-61.147,90.711-14.902,35.233-22.458,72.621-22.458,111.127s7.556,75.894,22.458,111.127c14.38,33.998,34.953,64.517,61.147,90.711,26.194,26.194,56.714,46.766,90.711,61.146,35.233,14.902,72.622,22.458,111.127,22.458s75.894-7.556,111.127-22.458c33.998-14.38,64.517-34.952,90.711-61.146,26.194-26.194,46.766-56.713,61.145-90.711,14.902-35.233,22.458-72.621,22.458-111.127s-7.556-75.894-22.458-111.127c-14.379-33.998-34.952-64.517-61.145-90.711-26.193-26.194-56.713-46.766-90.711-61.146-35.233-14.902-72.621-22.458-111.127-22.458h0Z"/></svg>Maison</button>
+  <button class="npill" data-page="hameau"><svg class="nav-icon" viewBox="0 0 640 640" fill="currentColor" aria-hidden="true"><path d="M319.998,105.415c121.77,0,220.483,98.712,220.483,220.481s-98.714,220.481-220.483,220.481-220.48-98.712-220.48-220.481,98.711-220.481,220.48-220.481M320,237.702c24.354,0,44.097-19.741,44.097-44.096s-19.743-44.095-44.097-44.095-44.096,19.743-44.096,44.095,19.743,44.096,44.096,44.096M320,369.992c24.354,0,44.097-19.741,44.097-44.096s-19.743-44.096-44.097-44.096-44.096,19.744-44.096,44.096,19.743,44.096,44.096,44.096M320,502.282c24.354,0,44.097-19.741,44.097-44.096s-19.743-44.096-44.097-44.096-44.096,19.744-44.096,44.096,19.743,44.096,44.096,44.096M319.998,40.454c-38.506,0-75.894,7.556-111.127,22.458-33.997,14.38-64.517,34.952-90.71,61.146-26.194,26.194-46.766,56.713-61.146,90.711-14.902,35.233-22.458,72.621-22.458,111.127s7.555,75.894,22.458,111.127c14.38,33.998,34.952,64.517,61.146,90.711,26.193,26.194,56.713,46.766,90.71,61.146,35.233,14.902,72.621,22.458,111.127,22.458s75.895-7.556,111.127-22.458c33.998-14.38,64.518-34.952,90.712-61.146,26.194-26.194,46.767-56.713,61.147-90.711,14.902-35.233,22.459-72.621,22.459-111.127s-7.556-75.894-22.459-111.127c-14.38-33.998-34.952-64.517-61.147-90.711-26.194-26.194-56.714-46.766-90.712-61.146-35.232-14.902-72.621-22.458-111.127-22.458h0Z"/></svg>Hameau</button>
+</nav>
+
+<button id="btn-admin">+ Média</button>
+
+<!-- PAGES -->
+<div class="page active" id="page-pratiques">
+  <div class="pg-scroll">
+    <!-- Titre — premier bloc vague -->
+    <div class="pg-hero wave-block"><h2 class="pg-title">Pratiques</h2></div>
+    <div class="pg-content pratiques-content">
+
+      <section class="prat-sec wave-block">
+        <h3 class="prat-h">Habiter</h3>
+        <ol class="prat-list">
+          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Réunir les trois lieux de vie — Le lieu total intègre en son sein le lieu d'habitation, le lieu de travail et le lieu d'échange, de partage</li>
+          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Équilibrer l'intime et le commun — Accorder 80% de l'espace aux usages partagés et 20% à l'isolement</li>
+          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Usages pluriels et rythmés — Concevoir des espaces pluriels, ouverts à la transformation, à la multiplicité des pratiques, des temporalités et aux cycles naturels et humains</li>
+          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Préserver les zones non productives — Maintenir des espaces libres de toute contrainte, en offrant des zones tampons de retrait ou de transition propices à la contemplation, le rêve, la prière et à la créativité</li>
+          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Favoriser la libre durée — Permettre à chacun·e de choisir la durée de sa résidence en échange d'une contribution solidaire</li>
+        </ol>
+      </section>
+
+      <section class="prat-sec wave-block">
+        <h3 class="prat-h">Consommer</h3>
+        <ol class="prat-list">
+          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Cultiver la sobriété et l'autonomie — Le lieu se veut simple, mesuré, limité à l'essentiel : une architecture sans excès, au service de la vie. Les ressources utilisées sont au maximum produites, pensées, choisies et justifiées</li>
+          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Manger localement — L'alimentation est produite et/ou provient d'un territoire proche, dans un rayon de 30km</li>
+          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Honorer la matière du lieu — Les constructions s'ancrent dans le sol qu'elles habitent : matériaux du terrain, textures du climat, empreinte réduite</li>
+        </ol>
+      </section>
+
+      <section class="prat-sec wave-block">
+        <h3 class="prat-h">Gouverner</h3>
+        <ol class="prat-list">
+          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Gouverner horizontalement — La gestion se répartit horizontalement : chaque habitant, quelle que soit son âge ou son statut, dispose d'une voix égale dans les décisions</li>
+          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Répartir les pôles essentiels — Des pôles sont gérés sur un principe d'épistocratie : Agriculture et autosuffisance, Construction et habitat, Énergie et ressources, Vie quotidienne et convivialité, Gouvernance et accueil, Économie et liens externes</li>
+          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Pratiquer la rotation et la révocabilité — Les responsabilités ne sont jamais figées : elles tournent, se partagent, se réinventent au fil du temps et des capacités</li>
+          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Faire du temps une matière de projet — Prévoir, phaser, anticiper, le paysage est la trace visible du passage du temps</li>
+        </ol>
+      </section>
+
+      <section class="prat-sec wave-block">
+        <h3 class="prat-h">Transmettre</h3>
+        <ol class="prat-list">
+          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Partager les savoirs dans l'unité — L'homogénéité des connaissances fonde la cohésion du lieu, mais chaque pôle garde sa responsabilité, sa voix propre</li>
+          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Ancrer le lieu dans son territoire — Le lieu total ne s'isole pas : il devient ressource, partenaire, acteur du voisinage et de la vie locale. Il soutient la vitalité du bassin de vie, partage ses savoirs, ses productions et ses infrastructures</li>
+          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Expérimenter et se métamorphoser — Le lieu est vivant, il crée, transforme, expérimente, évolue sans fin. Ne rien figer, ne rien sacraliser, chaque acquis doit pouvoir être remis en jeu. Le lieu n'est jamais terminé : c'est une recherche en acte, un terrain d'essais collectif</li>
+          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Faire de l'atelier un cœur battant — L'atelier est l'espace central du faire, où se croisent la main, la matière et l'idée. C'est là que le lieu apprend à se réinventer</li>
+        </ol>
+      </section>
+
+      <section class="prat-sec wave-block">
+        <h3 class="prat-h">Accueillir</h3>
+        <ol class="prat-list">
+          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Pratiquer l'inclusion — Le lieu accueille toutes les personnes et reconnaît toutes les identités, sans exclusion ni hiérarchie</li>
+          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Accueillir toutes les spiritualités — Un lieu pluriculturel et pluri-culte, ouvert à ceux qui croient ou non, prient, méditent ou se taisent</li>
+          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Établir une charte d'engagement inclusive — Chaque membre l'accepte comme fondement éthique. Son non-respect mène à une convocation et à la décision commune en assemblée</li>
+        </ol>
+      </section>
+
+      <section class="prat-sec wave-block">
+        <h3 class="prat-h">Soigner</h3>
+        <ol class="prat-list">
+          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Prendre soin du corps, de l'esprit et du groupe — Le soin est primordial : il soutient la cohésion, apaise les tensions et rend possible la vie commune</li>
+        </ol>
+      </section>
+
+      <section class="prat-sec wave-block">
+        <h3 class="prat-h">Fêter</h3>
+        <ol class="prat-list">
+          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Célébrer la vie — La fête, les saisons, les réussites et les passages rythment l'existence du lieu. Célébrer, c'est reconnaître la vitalité du collectif</li>
+          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Le rapport à l'excès — Chacun est responsable de ses élans et de ses excès, tant qu'ils ne blessent ni ne restreignent les autres. La joie est commune quand elle respecte le cercle</li>
+        </ol>
+      </section>
+
+    </div>
+  </div>
+</div>
+<div class="page" id="page-carte">
+  <div id="map"></div>
+  <div id="layers-panel">
+    <div class="lp-tabs">
+      <button class="lp-tab active" data-sec="calque">Calque</button>
+      <button class="lp-tab" data-sec="media">Média</button>
+    </div>
+    <div id="lp-calque" class="lp-sec">
+      <div id="llist"></div>
+    </div>
+    <div id="lp-media" class="lp-sec" style="display:none">
+      <button class="li mf-btn on" data-t="son"><img src="icons/son.svg" class="mf-icon" alt="son"><span class="ln">Son</span><div class="li-toggle"><div class="li-toggle-knob"></div></div></button>
+      <button class="li mf-btn on" data-t="video"><img src="icons/video.svg" class="mf-icon" alt="vidéo"><span class="ln">Vidéo</span><div class="li-toggle"><div class="li-toggle-knob"></div></div></button>
+      <button class="li mf-btn on" data-t="photo"><img src="icons/photo.svg" class="mf-icon" alt="photo"><span class="ln">Photo</span><div class="li-toggle"><div class="li-toggle-knob"></div></div></button>
+      <button class="li mf-btn on" data-t="texte"><img src="icons/texte.svg" class="mf-icon" alt="texte"><span class="ln">Texte</span><div class="li-toggle"><div class="li-toggle-knob"></div></div></button>
+    </div>
+  </div>
+</div>
+<div class="page" id="page-festival"><div class="pg-body"><h2>Festival</h2><p>Contenu à venir</p></div></div>
+<div class="page" id="page-maison"><div class="pg-body"><h2>Maison</h2><p>Contenu à venir</p></div></div>
+<div class="page" id="page-hameau"><div class="pg-body"><h2>Hameau</h2><p>Contenu à venir</p></div></div>
+
+<!-- LIGHTBOX -->
+<div id="lightbox">
+  <div id="lb-bg"></div>
+  <div id="lb-box">
+    <button id="lb-close">×</button>
+    <button id="lb-prev" class="lb-nav">←</button>
+    <button id="lb-next" class="lb-nav">→</button>
+    <div id="lb-media"></div>
+    <div id="lb-cap">
+      <div id="lb-cap-text"></div>
+      <div id="lb-cap-type"></div>
+      <div id="lb-counter"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="admin-panel">
+  <div class="ah"><div class="at">Média</div><div class="as">Accès protégé</div></div>
+  <div id="a-login">
+    <div class="al-lbl">Entrez votre mot de passe pour accéder à l'administration du site</div>
+    <input type="password" class="a-pw" id="pw" placeholder="Mot de passe">
+    <div class="a-err" id="pw-err">Mot de passe incorrect</div>
+    <button class="abtn" id="pw-ok">Accéder</button>
+    <button class="abtn sec" id="pw-cancel">Fermer</button>
+  </div>
+  <div id="a-content">
+    <div>
+      <div class="a-sec">Type de média</div>
+      <div class="tpills">
+        <button class="tp on" data-t="son">Son</button>
+        <button class="tp" data-t="video">Vidéo</button>
+        <button class="tp" data-t="photo">Photo</button>
+        <button class="tp" data-t="texte">Texte</button>
+        <button class="tp" data-t="mounas">Mounas</button>
+      </div>
+    </div>
+    <div class="a-fld"><label>Légende</label><input type="text" class="a-in" id="m-cap" placeholder="Description courte"></div>
+    <div id="zf">
+      <div class="a-fld"><label>Fichiers</label>
+        <div class="a-drop"><input type="file" id="m-file" accept="audio/*,image/*">
+          <div class="a-drop-lbl"><strong>Ajouter un fichier</strong>audio · image</div>
+        </div>
+        <div id="pending-media-list"></div>
+      </div>
+    </div>
+    <!-- Champ URL YouTube — visible uniquement pour le type Vidéo -->
+    <div id="zv" style="display:none">
+      <div class="a-fld">
+        <label>URL YouTube</label>
+        <input type="text" class="a-in" id="m-yt" placeholder="https://www.youtube.com/watch?v=…">
+      </div>
+    </div>
+    <div id="zt" style="display:none">
+      <div class="a-fld"><label>Texte</label><textarea class="a-in" id="m-txt" placeholder="Votre contenu…"></textarea></div>
+    </div>
+    <div id="zr" style="display:none">
+      <div class="a-fld"><label>Rayon d'activation son</label>
+        <input type="range" id="m-rad" min="20" max="200" value="60" style="accent-color:var(--ink);width:100%">
+        <span style="font-size:var(--fs-sm);color:var(--ink2)" id="radlbl">60 px</span>
+      </div>
+    </div>
+    <div class="a-note">Remplissez les champs puis <strong>Placer →</strong> et cliquez sur la carte.</div>
+    <button class="abtn" id="btn-place">Placer →</button>
+    <hr class="a-sep">
+    <div><div class="a-sec">Médias placés</div><div class="ml" id="mlist"></div></div>
+    <button class="abtn sec" id="btn-logout" style="margin-top:6px">Se déconnecter</button>
+  </div>
+</div>
+
+<div id="pbar"><span>Cliquez sur la carte pour placer</span><button class="pcancel" id="pcancel">Annuler</button></div>
+<div id="toast"></div>
+
+<!-- BOUTON ŒIL — position fixed, indépendant de Leaflet -->
+<button id="eye-btn-fixed" title="Masquer/afficher la carte">
+  <img src="icons/oeil.svg" alt="œil" draggable="false">
+</button>
+
+<!-- Dégradés haut/bas — visibles uniquement sur la page Pratiques -->
+<div class="pratiques-fade pratiques-fade-top" id="pratiques-fade-top"></div>
+<div class="pratiques-fade pratiques-fade-bot" id="pratiques-fade-bot"></div>
+
+<!-- FLÈCHE TOMBANTE — page Pratiques
+     Blanche + mix-blend-mode:difference sur le conteneur → le texte "Pratiques"
+     en noir devient blanc au passage de la flèche (effet négatif automatique).
+     L'élément est masqué par défaut ; JS le pilote. -->
+<div id="pratiques-arrow" aria-hidden="true">
+  <svg viewBox="0 0 80 200" width="480" height="1200" fill="white" xmlns="http://www.w3.org/2000/svg">
+    <!-- Hampe verticale -->
+    <rect x="31" y="0" width="18" height="148"/>
+    <!-- Pointe (triangle) -->
+    <polygon points="0,128 40,200 80,128"/>
+  </svg>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+<script>
+// ─── SPLASH ──────────────────────────────────────────────────────────────────
+// Mot de passe d'entrée — jamais mémorisé, demandé à chaque ouverture
+const SPLASH_PW = 'Tence2026';
+
+(function initSplash(){
+  const splash   = document.getElementById('splash');
+  const pw       = document.getElementById('splash-pw');
+  const btn      = document.getElementById('splash-btn');
+  const err      = document.getElementById('splash-err');
+  const pwWrap   = document.getElementById('splash-pw-wrap');
+  const realLogo = document.getElementById('logo');
+  const navFloat = document.getElementById('nav-float');
+  const pratPage = document.getElementById('page-pratiques');
+
+  // Masquer logo + nav pendant l'affichage du splash
+  realLogo.style.visibility    = 'hidden';
+  navFloat.style.opacity       = '0';
+  navFloat.style.pointerEvents = 'none';
+
+  // Pré-positionner la page Pratiques hors écran (en bas), sans transition
+  pratPage.style.transition = 'none';
+  pratPage.style.transform  = 'translateY(100%)';
+
+  function unlock(){
+    if(pw.value !== SPLASH_PW){
+      err.style.display = 'block';
+      pw.classList.add('err');
+      pw.value = '';
+      pw.focus();
+      return;
+    }
+
+    err.style.display = 'none';
+    pw.classList.remove('err');
+
+    // Stopper la physique du logo si elle était active
+    if(window._stopSplashPhysics) window._stopSplashPhysics();
+
+    // 1. Fondu rapide du formulaire
+    pwWrap.style.transition    = 'opacity 0.18s ease';
+    pwWrap.style.opacity       = '0';
+    pwWrap.style.pointerEvents = 'none';
+
+    // 2. Transition verticale simultanée :
+    //    splash sort par le haut, Pratiques entre par le bas
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        splash.style.transition   = 'transform 500ms cubic-bezier(0.4,0,0.2,1)';
+        splash.style.transform    = 'translateY(-100%)';
+        pratPage.style.transition = 'transform 500ms cubic-bezier(0.4,0,0.2,1)';
+        pratPage.style.transform  = 'translateY(0)';
+      });
+    });
+
+    // 3. Nettoyage après fin de l'animation (500ms + 20ms marge)
+    setTimeout(function(){
+      splash.remove();
+      pratPage.style.transition = '';
+      pratPage.style.transform  = '';
+      // Afficher logo + nav avec un léger fondu
+      realLogo.style.visibility    = '';
+      navFloat.style.transition    = 'opacity 0.3s ease';
+      navFloat.style.opacity       = '1';
+      navFloat.style.pointerEvents = '';
+      navTo('pratiques');
+      // Afficher immédiatement les dégradés (Pratiques est la page d'accueil)
+      document.getElementById('pratiques-fade-top').classList.add('visible');
+      document.getElementById('pratiques-fade-bot').classList.add('visible');
+    }, 520);
+  }
+
+  btn.addEventListener('click', unlock);
+  pw.addEventListener('keydown', function(e){ if(e.key === 'Enter') unlock(); });
+})();
+
+// ─── PHYSIQUE MATTER.JS — LETTRES + LOGO (SPLASH) ────────────────────────────
+// Chaque lettre .sl et le logo sont des corps Matter.js.
+// Statiques par défaut, ils tombent au clic et entrent en collision mutuellement.
+// Survol → shake CSS ; Clic → chute avec gravité et collisions réelles.
+// Drag → attraper et lancer ; Double-clic sur un tombé → retour en place.
+(function initSplashPhysics(){
+  const splash = document.getElementById('splash');
+  if(!splash) return;
+
+  // ── Vérification que Matter.js est chargé ─────────────────────────────────
+  if(typeof Matter === 'undefined'){ console.warn('Matter.js non chargé'); return; }
+
+  // ── Déstructuration Matter.js ─────────────────────────────────────────────
+  const { Engine, Runner, Bodies, Composite, Body } = Matter;
+
+  // ── Moteur physique (sans canvas Matter — on synchronise les HTML manuellement)
+  const engine = Engine.create({ gravity:{ y:1.2 } });
+  const runner = Runner.create();
+  Runner.run(runner, engine);
+
+  let splashAlive = true;
+
+  // ── Murs statiques : sol, plafond, gauche, droite (150px d'épaisseur) ────────
+  const W = window.innerWidth, H = window.innerHeight, T = 150;
+  const wallBodies = [
+    Bodies.rectangle(W/2,  H+T/2,  W+T*2, T,  { isStatic:true, label:'wall' }),  // sol
+    Bodies.rectangle(W/2, -T/2,    W+T*2, T,  { isStatic:true, label:'wall' }),  // plafond
+    Bodies.rectangle(-T/2, H/2,    T, H+T*2,  { isStatic:true, label:'wall' }),  // gauche
+    Bodies.rectangle(W+T/2, H/2,   T, H+T*2,  { isStatic:true, label:'wall' }),  // droite
+  ];
+  Composite.add(engine.world, wallBodies);
+
+  // Mise à jour des positions des murs au redimensionnement de la fenêtre
+  window.addEventListener('resize', function(){
+    const nW = window.innerWidth, nH = window.innerHeight;
+    if(!splashAlive) return;
+    Body.setPosition(wallBodies[0], { x: nW/2,   y: nH+T/2 });
+    Body.setPosition(wallBodies[1], { x: nW/2,   y: -T/2   });
+    Body.setPosition(wallBodies[2], { x: -T/2,   y: nH/2   });
+    Body.setPosition(wallBodies[3], { x: nW+T/2, y: nH/2   });
+  });
+
+  // ── Éléments tombés : { el, clone, body, r } ─────────────────────────────
+  const fallen = [];
+
+  // ── Boucle de synchronisation Matter.js → HTML (un seul rAF partagé) ─────
+  const MAX_VEL = 25; // vitesse max par frame (px)
+  function syncLoop(){
+    if(!splashAlive) return;
+    const sW = window.innerWidth, sH = window.innerHeight;
+    fallen.forEach(function(item){
+      const b   = item.body;
+      const pos = b.position;
+      const vel = b.velocity;
+
+      // ── Clamp vélocité ±MAX_VEL ─────────────────────────────────────────
+      if(Math.abs(vel.x) > MAX_VEL || Math.abs(vel.y) > MAX_VEL){
+        Body.setVelocity(b, {
+          x: Math.max(-MAX_VEL, Math.min(MAX_VEL, vel.x)),
+          y: Math.max(-MAX_VEL, Math.min(MAX_VEL, vel.y))
+        });
+      }
+
+      // ── Téléport si hors écran (marge de 20px pour les corps partiels) ──
+      const margin = 20;
+      let nx = pos.x, ny = pos.y, nvx = b.velocity.x, nvy = b.velocity.y, tp = false;
+      if(pos.x < -margin)       { nx = margin;      nvx =  Math.abs(nvx); tp = true; }
+      else if(pos.x > sW+margin){ nx = sW - margin; nvx = -Math.abs(nvx); tp = true; }
+      if(pos.y < -margin)       { ny = margin;      nvy =  Math.abs(nvy); tp = true; }
+      else if(pos.y > sH+margin){ ny = sH - margin; nvy = -Math.abs(nvy); tp = true; }
+      if(tp){ Body.setPosition(b, { x:nx, y:ny }); Body.setVelocity(b, { x:nvx, y:nvy }); }
+
+      // ── Sync visuel ─────────────────────────────────────────────────────
+      const a  = b.angle;
+      const hw = item.r.width / 2, hh = item.r.height / 2;
+      item.clone.style.transform =
+        'translate('+(b.position.x-hw)+'px,'+(b.position.y-hh)+'px) rotate('+a+'rad)';
+    });
+    requestAnimationFrame(syncLoop);
+  }
+  requestAnimationFrame(syncLoop);
+
+  // ── Arrêt propre exposé à unlock() ───────────────────────────────────────
+  window._stopSplashPhysics = function(){
+    splashAlive = false;
+    Runner.stop(runner);
+    fallen.forEach(function(item){ item.clone.remove(); });
+    document.querySelectorAll('.splash-clone').forEach(function(c){ c.remove(); });
+  };
+
+  // ── Shake CSS au survol (lettres non encore tombées) ─────────────────────
+  function addShake(el){
+    el.addEventListener('mouseenter', function(){
+      if(el.style.visibility === 'hidden') return; // déjà tombé
+      el.classList.remove('shaking');
+      void el.offsetWidth; // force reflow pour relancer l'animation
+      el.classList.add('shaking');
+      el.addEventListener('animationend', function rm(){
+        el.classList.remove('shaking');
+        el.removeEventListener('animationend', rm);
+      });
+    });
+  }
+
+  // ── Physique au clic : corps Matter.js + clone visuel fixe ───────────────
+  function addPhysics(el){
+    let active = false; // true = cet élément est déjà tombé
+
+    el.addEventListener('click', function(e){
+      if(active || !splashAlive) return;
+      e.stopPropagation();
+      active = true;
+
+      // Position et style exacts au moment du clic
+      const r  = el.getBoundingClientRect();
+      const cs = getComputedStyle(el);
+      const isLogo = (el.tagName === 'IMG');
+
+      // Masquer l'original — l'espace dans le flux est préservé
+      el.style.visibility = 'hidden';
+
+      // Clone visuel fixe qui suit le corps Matter.js
+      const clone = document.createElement('div');
+      clone.className = 'splash-clone';
+      clone.style.cssText =
+        'position:fixed;top:0;left:0;z-index:9999;pointer-events:auto;user-select:none;' +
+        'cursor:grab;transform-origin:center center;' +
+        'width:'+r.width+'px;height:'+r.height+'px;' +
+        'transform:translate('+r.left+'px,'+r.top+'px);' +
+        (!isLogo ?
+          'display:flex;align-items:center;justify-content:center;' +
+          'font-family:'+cs.fontFamily+';font-size:'+cs.fontSize+';' +
+          'font-weight:'+cs.fontWeight+';letter-spacing:'+cs.letterSpacing+';' +
+          'color:'+cs.color+';' : '');
+
+      if(isLogo){
+        clone.innerHTML =
+          '<img src="'+el.src+'" style="width:'+r.width+'px;height:'+r.height+'px;' +
+          'object-fit:contain;display:block;">';
+      } else {
+        clone.textContent = el.textContent || '\u00A0';
+      }
+      document.body.appendChild(clone);
+
+      // Corps Matter.js centré sur la position de l'élément
+      const cx = r.left + r.width/2;
+      const cy = r.top  + r.height/2;
+
+      // ── Réduction des hitbox pour coller à la forme noire visible ────────
+      // Lettres fines (i, l, 1, j…) → 40% de la largeur réelle
+      // Lettres normales            → 70% de la largeur, 85% de la hauteur
+      // Lettres avec zones confuses (dessus/dessous) → 70% largeur, 75% hauteur
+      // Logo                        → cercle ajusté (rayon = 42% du min côté)
+      const NARROW = new Set(['i','l','1','j','!','|','f','r','t']);
+      // Caractères dont les bords haut/bas se confondent avec les voisins
+      const VSHORT = new Set(['a','n','o','e']); // minuscules problématiques
+      const ch     = el.textContent.trim();
+      const chLow  = ch.toLowerCase();
+      const isNarrow = ch.length === 1 && NARROW.has(chLow);
+      // Hauteur réduite à 75% pour les lettres dont le dessus/dessous se confond
+      // ('t' et 'T' minuscule/majuscule identifiés séparément)
+      const isVShort = ch.length === 1 && (VSHORT.has(chLow) || ch === 't' || ch === 'T');
+      const bw = isNarrow ? r.width * 0.40 : r.width * 0.70;
+      const bh = r.height * (isVShort ? 0.75 : 0.85);
+
+      const body = isLogo
+        // Logo → cercle dont le rayon correspond au cercle visible du SVG
+        ? Bodies.circle(cx, cy, Math.min(r.width, r.height) * 0.42, {
+            restitution:0.5, friction:0.3, frictionAir:0.012, label:'logo' })
+        // Lettre → rectangle réduit centré sur la partie noire
+        : Bodies.rectangle(cx, cy, bw, bh, {
+            restitution:0.5, friction:0.3, frictionAir:0.012, label:'letter' });
+
+      // Petite impulsion initiale aléatoire (latérale + légère montée)
+      Body.setVelocity(body, { x:(Math.random()-0.5)*4, y:-0.5 });
+      Composite.add(engine.world, body);
+
+      const item = { el, clone, body, r };
+      fallen.push(item);
+
+      // ── Drag : attraper et lancer les éléments tombés ─────────────────────
+      // On déplace le corps Matter.js directement sous la souris.
+      // Au relâchement, la vélocité accumulée est réinjectée dans le moteur.
+      let dragging = false;
+      let offX = 0, offY = 0;
+      let velX = 0, velY = 0, prevX = 0, prevY = 0;
+
+      clone.addEventListener('mousedown', function(de){
+        de.preventDefault(); de.stopPropagation();
+        dragging = true;
+        offX  = de.clientX - body.position.x;
+        offY  = de.clientY - body.position.y;
+        prevX = de.clientX; prevY = de.clientY;
+        velX  = 0; velY = 0;
+        clone.style.cursor = 'grabbing';
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup',   onUp);
+      });
+
+      function onMove(me){
+        if(!dragging) return;
+        // Vélocité visuelle (pour le lancer)
+        velX = me.clientX - prevX;
+        velY = me.clientY - prevY;
+        prevX = me.clientX; prevY = me.clientY;
+        // Déplacer le corps physique sous le curseur
+        Body.setPosition(body, { x:me.clientX-offX, y:me.clientY-offY });
+        Body.setVelocity(body, { x:0, y:0 });
+      }
+
+      function onUp(){
+        if(!dragging) return;
+        dragging = false;
+        clone.style.cursor = 'grab';
+        // Réinjecter la vélocité du lancer dans le moteur
+        Body.setVelocity(body, { x:velX*5, y:velY*5 });
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup',   onUp);
+      }
+
+      // ── Double-clic → retirer du moteur et remettre en place ─────────────
+      clone.addEventListener('dblclick', function(de){
+        de.preventDefault();
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup',   onUp);
+        // Retirer le corps du monde Matter.js
+        Composite.remove(engine.world, body);
+        // Supprimer le clone visuel
+        clone.remove();
+        // Restaurer l'élément HTML d'origine
+        el.style.visibility = '';
+        active = false;
+        // Retirer de la liste des tombés
+        const idx = fallen.indexOf(item);
+        if(idx > -1) fallen.splice(idx, 1);
+      });
+    });
+  }
+
+  // ── Attacher shake + physique à chaque lettre et au logo ─────────────────
+  document.querySelectorAll('.sl').forEach(function(sl){
+    addShake(sl);
+    if(sl.textContent.trim()) addPhysics(sl); // les espaces ne sont pas cliquables
+  });
+  var logoImg = document.getElementById('splash-logo-img');
+  if(logoImg){ addShake(logoImg); addPhysics(logoImg); }
+})();
+
+// ─── CONSTANTES ──────────────────────────────────────────────────────────────
+
+// Mot de passe admin (panneau Média)
+const PW = 'LTT1309';
+
+// Labels affichés pour chaque type de média
+const TYPE_LABEL = {son:'Son', video:'Vidéo', photo:'Photo', texte:'Texte', mounas:'Mounas'};
+
+// Icônes SVG par type (liste admin + marqueurs)
+const TYPE_ICON = {son:'son.svg', video:'video.svg', photo:'photo.svg', texte:'texte.svg', mounas:'mounas.svg'};
+
+// Couches GeoJSON — pour en ajouter une : une ligne ici + fichier dans RESSOURCES/COUCHES/GEOJSON/
+const LAYERS = [
+  // weight:0 + stroke:false = aplat sans contour (défaut pour zones remplies)
+  {id:'cimetiere',  label:'Cimetière',             color:'#9B89B4', file:'cimetiere.geojson',
+   lstyle:{weight:0,stroke:false,fillColor:'#9B89B4',fillOpacity:.35}},
+  {id:'sport',      label:'Équipements sportifs',  color:'#E8A0A0', file:'equipements_sportifs.geojson',
+   lstyle:{weight:0,stroke:false,fillColor:'#E8A0A0',fillOpacity:.35}},
+  {id:'forets',     label:'Forêts',                color:'#3D6B4F', file:'forets.geojson',
+   lstyle:{weight:0,stroke:false,fillColor:'#3D6B4F',fillOpacity:.35}},
+  {id:'mounas',     label:'Mounas',                color:'#C8502A', on:true, file:'mounas.geojson',
+   lstyle:{weight:0,stroke:false,fillColor:'#C8502A',fillOpacity:.35}},
+  {id:'ressources', label:'Ressources & matériaux',color:'#B5834A', file:'ressources_et_materiaux.geojson',
+   lstyle:{weight:0,stroke:false,fillColor:'#B5834A',fillOpacity:.35}},
+  {id:'sols',       label:'Sols construits',       color:'#AAAAAA',                                   // fichier à venir
+   lstyle:{weight:0,stroke:false,fillColor:'#AAAAAA',fillOpacity:.45}},
+  {id:'agricole',   label:'Terres agricoles',      color:'#C8B84A', on:true, file:'terres_agricoles.geojson',
+   special:'hachure'},                                                                                 // hachure SVG
+  {id:'topo',       label:'Topographie',           color:'#8B6914', file:'topographie.geojson',
+   lstyle:{weight:1,stroke:true,color:'#8B6914',dashArray:'4 6',fillOpacity:0,fill:false}},
+  {id:'ferree',     label:'Voie ferrée',            color:'#333333',                                   // fichier à venir
+   lstyle:{weight:3,stroke:true,color:'#333333',dashArray:'10 4',fillOpacity:0,fill:false}},
+  {id:'hydro',      label:'Hydrographie',           color:'#4A90D9',                                   // fichier à venir
+   lstyle:{weight:0,stroke:false,fillColor:'#4A90D9',fillOpacity:.5}},
+];
+
+// Points de démonstration hardcodés (ne jamais supprimer)
+const DEMO_PTS = [
+  {id:1,type:'son',  caption:'Ruisseau — mai 2024',      lat:45.120,lng:4.290,radius:80, media:[]},
+  {id:2,type:'photo',caption:'Vue depuis le belvédère',  lat:45.117,lng:4.295,radius:40, media:[]},
+  {id:3,type:'texte',caption:'Note morphologique',       lat:45.115,lng:4.286,radius:40, media:[],
+   text:'Le centre de Tence conserve une trame médiévale lisible, avec des parcelles étroites et profondes. Les transformations du XXe siècle ont introduit des volumes dissonants sans rompre la cohérence d\'ensemble.'},
+  {id:4,type:'mounas',caption:'Zone centrale du projet', lat:45.118,lng:4.292,radius:60, media:[]},
+];
+let pts = DEMO_PTS.map(p=>({...p}));
+let nid=10;
+
+// Persistance localStorage — clé stable (ne jamais renommer)
+const STORED_KEY='lieutotal_pts';
+function loadStoredPts(){
+  try{ return JSON.parse(localStorage.getItem(STORED_KEY)||'[]').map(migratePt); }
+  catch(e){ return []; }
+}
+function savePts(){
+  try{ localStorage.setItem(STORED_KEY,JSON.stringify(pts.filter(p=>p.id>=10))); }
+  catch(e){}
+}
+
+// Extrait l'identifiant (11 caractères) depuis une URL YouTube (watch ou youtu.be)
+function ytId(url){
+  if(!url) return null;
+  const m=url.match(/(?:youtube\.com\/watch\?(?:.*&)?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+// Migration : si un point importé depuis localStorage a un champ src direct mais pas de media[],
+// on le migre automatiquement en media:[{src, caption}]
+function migratePt(pt){
+  if(!pt.media){
+    pt.media = (pt.src && pt.src !== null) ? [{src:pt.src, caption:pt.caption}] : [];
+  }
+  return pt;
+}
+pts = pts.map(migratePt);
+
+// Fusion avec les points sauvegardés (ceux-ci ont id ≥ 10)
+const _stored=loadStoredPts();
+if(_stored.length){
+  const maxId=Math.max(..._stored.map(p=>p.id));
+  if(maxId>=nid) nid=maxId+1;
+  pts=[...pts,..._stored];
+}
+
+// ─── CARTE (initialisation lazy) ─────────────────────────────────────────────
+// La carte Leaflet n'est créée qu'au premier accès à l'onglet Carte.
+// Les GeoJSON sont fetchés dès le chargement de la page (pas d'attente).
+// Si la carte n'est pas encore créée quand la donnée arrive → c.pendingData.
+// initMap() injecte ces données dès que la couche est prête.
+
+let map = null;
+let tileLayer, mapVisible = true;
+let mapInitialized = false;
+const lobj = {};
+const layerVisible = {};
+const mkrs = {};
+
+// Tooltip générique — tente différents noms de propriété courants
+function tooltipFn(c){ return (f,l)=>{
+  const name=(f.properties&&(f.properties.name||f.properties.nom||f.properties.label||f.properties.NAME))||c.label;
+  l.bindTooltip(name,{sticky:true,offset:[8,0]});
+};}
+
+// Injection du pattern SVG hachure dans le renderer Leaflet
+function injectSVGPatterns(){
+  const svgEl=document.querySelector('#map .leaflet-overlay-pane svg');
+  if(!svgEl||svgEl.querySelector('#hachure-agri'))return;
+  let defs=svgEl.querySelector('defs');
+  if(!defs){defs=document.createElementNS('http://www.w3.org/2000/svg','defs');svgEl.insertBefore(defs,svgEl.firstChild);}
+  const pat=document.createElementNS('http://www.w3.org/2000/svg','pattern');
+  pat.setAttribute('id','hachure-agri'); pat.setAttribute('patternUnits','userSpaceOnUse');
+  pat.setAttribute('width','10'); pat.setAttribute('height','6');
+  const ln=document.createElementNS('http://www.w3.org/2000/svg','line');
+  ln.setAttribute('x1','0'); ln.setAttribute('y1','3'); ln.setAttribute('x2','10'); ln.setAttribute('y2','3');
+  ln.setAttribute('stroke','#C8B84A'); ln.setAttribute('stroke-width','1'); ln.setAttribute('opacity','0.75');
+  pat.appendChild(ln); defs.appendChild(pat);
+}
+
+// Filtre d'opacité + interactivité sur les types de médias (panneau gauche)
+// Toggle off → opacity 0.25 + pointer-events:none (plus de hover ni de clic)
+// Toggle on  → opacity 1   + pointer-events:auto  (tout refonctionne)
+function applyMediaFilter(){
+  const active=[...document.querySelectorAll('.mf-btn.on')].map(b=>b.dataset.t);
+  pts.forEach(p=>{
+    if(p.type==='mounas')return;
+    if(!mkrs[p.id])return;
+    const m=mkrs[p.id];
+    const on=active.includes(p.type);
+    m.setOpacity(on?1:.25);
+    const el=m.getElement();
+    if(el) el.style.pointerEvents=on?'auto':'none';
+    if(!on&&m.isPopupOpen()) m.closePopup();
+  });
+}
+
+// MARQUEURS
+
+function mkHTML(type){
+  const w=`position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;`;
+  const box=`display:flex;align-items:center;justify-content:center;overflow:hidden;width:20px;height:20px;position:relative;z-index:2;`;
+  const ico=(file)=>`<div style="${box}"><img src="icons/${file}" style="width:100%;height:100%;object-fit:contain;display:block;" onerror="this.style.display='none'"></div>`;
+  if(type==='son')    return`<div style="${w}">${ico('SON.svg')}</div>`;
+  if(type==='video')  return`<div style="${w}">${ico('VIDéo.svg')}</div>`;
+  if(type==='photo')  return`<div style="${w}">${ico('PHOTO.svg')}</div>`;
+  if(type==='texte')  return`<div style="${w}">${ico('TEXTE.svg')}</div>`;
+  if(type==='mounas') return`<div style="${w}">${ico('MOUNAS.svg')}</div>`;
+  return`<div style="${w}"><div style="width:12px;height:12px;border-radius:50%;background:#111;"></div></div>`;
+}
+
+function hoverHTML(pt){
+  if(pt.type==='mounas') return`<div class="mp-in">
+    <div class="mp-lbl">Le Mounas</div>
+    <a class="mp-lk" onclick="navTo('festival');return false;"><span class="mp-lk-n">Festival</span><span class="mp-arr">→</span></a>
+    <a class="mp-lk" onclick="navTo('maison');return false;"><span class="mp-lk-n">Maison</span><span class="mp-arr">→</span></a>
+    <a class="mp-lk" onclick="navTo('hameau');return false;"><span class="mp-lk-n">Hameau</span><span class="mp-arr">→</span></a>
+  </div>`;
+  let top='';
+  if(pt.type==='son') top=`<div class="ph-sound"><div class="ph-wave">${[...Array(20)].map((_,i)=>`<div class="wbar" style="height:${3+Math.floor(Math.random()*11)}px;animation-delay:${i*.07}s"></div>`).join('')}</div></div>`;
+  else if(pt.type==='photo'){const phsrc=(pt.media&&pt.media[0]&&pt.media[0].src)||null; top=`<div style="height:100px;background:${phsrc?'#000':'#ddd'};display:flex;align-items:center;justify-content:center;overflow:hidden;">${phsrc?`<img src="${phsrc}" style="width:100%;height:100%;object-fit:cover;">`:`<span style="font-size:11px;color:#999;">Photo</span>`}</div>`;}
+  else if(pt.type==='video'){
+    const vid=pt.media&&pt.media[0]&&ytId(pt.media[0].src);
+    if(vid){
+      top=`<div style="height:100px;background:#000;position:relative;overflow:hidden;">
+        <img src="https://img.youtube.com/vi/${vid}/hqdefault.jpg" style="width:100%;height:100%;object-fit:cover;" alt="">
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.25);">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="19" fill="rgba(0,0,0,.52)" stroke="rgba(255,255,255,.35)" stroke-width="1.5"/><polygon points="16,12 16,28 30,20" fill="rgba(255,255,255,.85)"/></svg>
+        </div>
+      </div>`;
+    } else {
+      top=`<div style="height:100px;background:#111;display:flex;align-items:center;justify-content:center;"><svg width="26" height="26" viewBox="0 0 26 26" fill="none"><circle cx="13" cy="13" r="12" stroke="rgba(255,255,255,.3)" stroke-width="1.5"/><polygon points="10,8 10,18 20,13" fill="rgba(255,255,255,.7)"/></svg></div>`;
+    }
+  }
+  return`<div>${top}<div style="padding:12px 14px;"><div class="ph-caption">${pt.caption}</div><div class="ph-type">${TYPE_LABEL[pt.type]||pt.type} — cliquer pour ouvrir</div></div></div>`;
+}
+
+function createMk(pt){
+  const icon=L.divIcon({html:mkHTML(pt.type),className:'',iconSize:[36,36],iconAnchor:[18,18],popupAnchor:[0,-22]});
+  const m=L.marker([pt.lat,pt.lng],{icon});
+  // Mounas : même fond blanc que les autres popups
+  m.bindPopup(hoverHTML(pt),{className:'',maxWidth:pt.type==='mounas'?230:270,minWidth:pt.type==='mounas'?200:230,autoPan:false,closeButton:false});
+  let open=false;
+  m.on('mouseover',function(){this.openPopup();open=true;});
+  if(pt.type==='mounas'){
+    // Délai 600ms pour laisser le temps de cliquer sur les liens de la popup
+    m.on('mouseout',function(){
+      const self=this;
+      setTimeout(()=>{
+        if(!open)return;
+        const popEl=self.getPopup()&&self.getPopup().getElement();
+        if(popEl&&popEl.matches(':hover'))return;
+        self.closePopup();open=false;
+      },600);
+    });
+    m.on('popupopen',function(){
+      const popEl=this.getPopup().getElement();
+      if(!popEl)return;
+      const self=this;
+      popEl.addEventListener('mouseleave',()=>{
+        if(open){self.closePopup();open=false;}
+      });
+    });
+  } else {
+    m.on('mouseout',function(){const self=this;setTimeout(()=>{if(open){self.closePopup();open=false;}},280);});
+  }
+  m.on('click',function(){if(pt.type!=='mounas')openLB(pt);});
+  m.addTo(map);
+  mkrs[pt.id]=m;
+}
+
+// ─── FETCH GEOJSON — lancé dès le chargement, indépendamment de la carte ──────
+// Si la carte est déjà initialisée quand la donnée arrive → injection directe.
+// Sinon → stockage dans c.pendingData, injecté par initMap() à la création.
+LAYERS.forEach(c=>{
+  if(!c.file) return;
+  const path='RESSOURCES/COUCHES/GEOJSON/'+c.file;
+  console.log('[GeoJSON] fetch :', path);
+  fetch(path)
+    .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(data=>{
+      const n=(data.features&&data.features.length)||0;
+      console.log('[GeoJSON] reçu :', c.label, '—', n, 'features');
+      if(map && lobj[c.id]){
+        // Carte déjà prête : injecter immédiatement
+        lobj[c.id].addData(data);
+        // Forcer le re-rendu même si la couche était déjà sur la carte
+        if(layerVisible[c.id] && mapVisible){
+          lobj[c.id].addTo(map);
+          console.log('[GeoJSON] ajouté à la carte :', c.label, lobj[c.id].getLayers().length, 'layers');
+        }
+        setTimeout(injectSVGPatterns, 50);
+        map.invalidateSize();
+      } else {
+        // Carte pas encore créée → stocker pour initMap()
+        console.log('[GeoJSON] carte pas prête, mise en attente :', c.label);
+        c.pendingData = data;
+      }
+    })
+    .catch(err=>{
+      console.warn('[GeoJSON] échec :', c.label, '—', err.message);
+      // Signaler dans le panneau UI si déjà rendu
+      const el=document.querySelector(`[data-layer-id="${c.id}"] .ln`);
+      if(el&&!el.querySelector('.missing-lbl')){
+        const s=document.createElement('span');
+        s.className='missing-lbl';
+        s.style.cssText='font-size:10px;color:var(--ink2);opacity:.55;margin-left:4px;';
+        s.textContent='(fichier manquant)';
+        el.appendChild(s);
+      }
+    });
+});
+
+// Initialisation effective de la carte — appelée une seule fois au 1er accès
+function initMap(){
+  if(mapInitialized)return;
+  mapInitialized=true;
+
+  const bounds=L.latLngBounds(L.latLng(45.095,4.260),L.latLng(45.140,4.325));
+  map=L.map('map',{
+    center:[45.118,4.292],zoom:14,minZoom:13,maxZoom:17,
+    maxBounds:bounds,maxBoundsViscosity:1,
+    zoomControl:true,attributionControl:false
+  });
+  tileLayer=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).addTo(map);
+  map.zoomControl.setPosition('bottomright');
+
+  // Créer les couches GeoJSON vides + injecter les données déjà reçues (pendingData)
+  LAYERS.forEach(c=>{
+    let layer;
+    if(c.special==='hachure'){
+      layer=L.geoJSON(null,{style:()=>({weight:0,stroke:false,fillColor:'url(#hachure-agri)',fillOpacity:1}),onEachFeature:tooltipFn(c)});
+    } else {
+      const s=c.lstyle||{color:c.color,weight:1.5,opacity:.8,fillColor:c.color,fillOpacity:.18};
+      layer=L.geoJSON(null,{style:s,onEachFeature:tooltipFn(c)});
+    }
+    lobj[c.id]=layer;
+    layerVisible[c.id]=!!c.on;
+    // Injecter les données déjà arrivées avant l'init de la carte
+    if(c.pendingData){
+      layer.addData(c.pendingData);
+      console.log('[GeoJSON] pendingData injecté :', c.label, layer.getLayers().length, 'layers');
+      c.pendingData=null;
+    }
+    if(layerVisible[c.id]) layer.addTo(map);
+  });
+
+  map.on('layeradd moveend',injectSVGPatterns);
+  setTimeout(injectSVGPatterns,600);
+  // Recalcul du rendu après montage complet
+  setTimeout(()=>{ map.invalidateSize(); console.log('[carte] invalidateSize après init'); }, 200);
+
+  // Liste UI des couches dans le panneau gauche
+  const llst=document.getElementById('llist');
+  LAYERS.forEach(c=>{
+    const missing=!c.file&&c.special!=='hachure';
+    const el=document.createElement('div');
+    el.className='li'+(layerVisible[c.id]?' on':'');
+    el.dataset.layerId=c.id;
+    const labelHtml=missing?`${c.label} <span style="font-size:10px;color:var(--ink2);opacity:.55;">(à venir)</span>`:c.label;
+    el.innerHTML=`<div class="ldot" style="background:${c.color}"></div><span class="ln">${labelHtml}</span><div class="li-toggle"><div class="li-toggle-knob"></div></div>`;
+    el.addEventListener('click',()=>{
+      const on=el.classList.contains('on');
+      el.classList.toggle('on',!on);
+      layerVisible[c.id]=!on;
+      if(on) map.removeLayer(lobj[c.id]);
+      else if(mapVisible){ lobj[c.id].addTo(map); setTimeout(injectSVGPatterns,50); }
+    });
+    llst.appendChild(el);
+  });
+
+  // Bouton œil — position fixed dans le DOM (hors Leaflet), wired ici au 1er accès Carte
+  (function(){
+    const btn = document.getElementById('eye-btn-fixed');
+    if(!btn || btn._wired) return;
+    btn._wired = true;
+    btn.addEventListener('click', function(){
+      mapVisible = !mapVisible;
+      btn.classList.toggle('eye-on', !mapVisible);
+      if(mapVisible){
+        tileLayer.addTo(map);
+        LAYERS.forEach(c=>{ if(layerVisible[c.id]) lobj[c.id].addTo(map); });
+      } else {
+        tileLayer.remove();
+        LAYERS.forEach(c=>lobj[c.id].remove());
+      }
+    });
+  })();
+
+  // Onglets panneau gauche (Calque / Média)
+  document.querySelectorAll('.lp-tab').forEach(tab=>{
+    tab.addEventListener('click',()=>{
+      document.querySelectorAll('.lp-tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      const sec=tab.dataset.sec;
+      document.getElementById('lp-calque').style.display=sec==='calque'?'':'none';
+      document.getElementById('lp-media').style.display =sec==='media' ?'':'none';
+    });
+  });
+
+  // Boutons filtre médias
+  document.querySelectorAll('.mf-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{ btn.classList.toggle('on'); applyMediaFilter(); });
+  });
+
+  // Placer les points de démonstration sur la carte
+  pts.forEach(createMk);
+
+  // Clic sur la carte : placement d'un nouveau média (mode admin actif)
+  map.on('click',function(e){
+    if(!placing||!pending)return;
+    const pt={id:nid++,...pending,lat:e.latlng.lat,lng:e.latlng.lng};
+    pts.push(pt); createMk(pt); applyMediaFilter(); renderML(); savePts(); cancelPlace();
+    toast('Média placé');
+    resetAdminForm();
+  });
+}
+
+// ─── LIGHTBOX ─────────────────────────────────────────────────────────────────
+const lb=document.getElementById('lightbox');
+let lbCurrentPt=null, lbCurrentIdx=0;
+
+function renderLBMedia(){
+  const pt=lbCurrentPt;
+  const media=pt.media||[];
+  const curSrc=media.length>0 ? media[lbCurrentIdx].src : null;
+
+  // Boutons de navigation et compteur
+  const prevBtn=document.getElementById('lb-prev');
+  const nextBtn=document.getElementById('lb-next');
+  const counter=document.getElementById('lb-counter');
+  if(media.length>1){
+    prevBtn.style.display='flex'; nextBtn.style.display='flex';
+    counter.style.display='block';
+    counter.textContent=`${lbCurrentIdx+1} / ${media.length}`;
+    prevBtn.disabled=(lbCurrentIdx===0);
+    nextBtn.disabled=(lbCurrentIdx===media.length-1);
+  } else {
+    prevBtn.style.display='none'; nextBtn.style.display='none';
+    counter.style.display='none';
+  }
+
+  // Nettoyage du contenu dynamique précédent
+  const s=document.getElementById('lb-sound'); if(s)s.remove();
+  const t=document.getElementById('lb-txt');   if(t)t.remove();
+  const lbm=document.getElementById('lb-media');
+  lbm.innerHTML=''; lbm.style.background='#111'; lbm.style.display='flex';
+
+  if(pt.type==='son'){
+    lbm.style.display='none';
+    // Bouton play fonctionnel si un src audio existe
+    const playAction=curSrc
+      ? `(function(){var a=document.getElementById('lb-audio-el');a?a.paused?a.play():a.pause():void 0})()`
+      : `toast('Connectez votre fichier son')`;
+    lbm.insertAdjacentHTML('afterend',
+      `<div id="lb-sound" style="background:#111;padding:32px 28px;display:flex;flex-direction:column;gap:18px;">
+        <div id="lb-row" style="display:flex;align-items:center;gap:16px;">
+          <button id="lb-play" onclick="${playAction}"><svg width="16" height="18" viewBox="0 0 16 18" fill="#111"><polygon points="1,1 1,17 15,9"/></svg></button>
+          <div id="lb-wf" style="display:flex;align-items:center;gap:2px;height:40px;flex:1;">${[...Array(40)].map((_,i)=>`<div class="lbwb" style="height:${4+Math.floor(Math.random()*28)}px;animation-delay:${i*.04}s"></div>`).join('')}</div>
+        </div>
+        ${curSrc?`<audio id="lb-audio-el" src="${curSrc}" style="display:none;"></audio>`:''}
+      </div>`);
+  } else if(pt.type==='texte'){
+    lbm.style.display='none';
+    lbm.insertAdjacentHTML('afterend',`<div id="lb-txt">${pt.text||'Contenu à venir.'}</div>`);
+  } else if(pt.type==='photo'&&curSrc){
+    lbm.innerHTML=`<img src="${curSrc}" style="width:100%;height:100%;object-fit:contain;">`;
+  } else if(pt.type==='video'&&curSrc){
+    const vid=ytId(curSrc);
+    if(vid){
+      // Embed YouTube responsive dans la lightbox
+      lbm.style.background='#000';
+      lbm.innerHTML=`<iframe
+        src="https://www.youtube.com/embed/${vid}?autoplay=1&rel=0"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen
+        style="width:100%;aspect-ratio:16/9;max-height:62vh;border:none;display:block;">
+      </iframe>`;
+    } else {
+      // Fallback : URL non-YouTube, lecture directe
+      lbm.innerHTML=`<video controls src="${curSrc}" style="width:100%;max-height:62vh;"></video>`;
+    }
+  } else {
+    lbm.innerHTML=`<div style="padding:48px;text-align:center;color:rgba(255,255,255,.4);font-size:13px;font-weight:400;">Média à connecter</div>`;
+  }
+}
+
+function openLB(pt){
+  lbCurrentPt=pt; lbCurrentIdx=0;
+  document.getElementById('lb-cap-text').textContent=pt.caption;
+  document.getElementById('lb-cap-type').textContent=TYPE_LABEL[pt.type]||pt.type;
+  renderLBMedia();
+  lb.classList.add('open');
+}
+
+function closeLB(){
+  lb.classList.remove('open');
+  lbCurrentPt=null;
+  const s=document.getElementById('lb-sound'); if(s)s.remove();
+  const t=document.getElementById('lb-txt');   if(t)t.remove();
+  // Vider lb-media pour stopper l'iframe YouTube (arrêt immédiat de la lecture)
+  document.getElementById('lb-media').innerHTML='';
+  document.getElementById('lb-media').style.display='flex';
+  document.getElementById('lb-counter').style.display='none';
+  document.getElementById('lb-prev').style.display='none';
+  document.getElementById('lb-next').style.display='none';
+}
+
+document.getElementById('lb-bg').addEventListener('click',closeLB);
+document.getElementById('lb-close').addEventListener('click',closeLB);
+document.getElementById('lb-prev').addEventListener('click',()=>{
+  if(!lbCurrentPt)return;
+  if(lbCurrentIdx>0){lbCurrentIdx--; renderLBMedia();}
+});
+document.getElementById('lb-next').addEventListener('click',()=>{
+  if(!lbCurrentPt)return;
+  const media=lbCurrentPt.media||[];
+  if(lbCurrentIdx<media.length-1){lbCurrentIdx++; renderLBMedia();}
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeLB();return;}
+  if(!lb.classList.contains('open')||!lbCurrentPt)return;
+  const media=lbCurrentPt.media||[];
+  if(e.key==='ArrowLeft'  && lbCurrentIdx>0)              {lbCurrentIdx--; renderLBMedia();}
+  if(e.key==='ArrowRight' && lbCurrentIdx<media.length-1) {lbCurrentIdx++; renderLBMedia();}
+});
+// ─── NAVIGATION ───────────────────────────────────────────────────────────────
+
+function navTo(page){
+  if(map) map.closePopup();
+  document.querySelectorAll('.npill').forEach(p=>p.classList.remove('active'));
+  document.querySelector(`[data-page="${page}"]`).classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
+  // Carte : initialiser au premier accès + recalculer la taille
+  if(page==='carte'){
+    initMap();
+    setTimeout(()=>map&&map.invalidateSize(),100);
+  }
+  // Bouton Média visible uniquement sur l'onglet Carte
+  document.getElementById('btn-admin').style.display=page==='carte'?'':'none';
+  // Bouton œil fixe — visible uniquement sur la Carte
+  const _eyeFixed = document.getElementById('eye-btn-fixed');
+  if(_eyeFixed) _eyeFixed.style.display = page==='carte' ? 'flex' : 'none';
+  // Dégradés haut/bas — visibles uniquement sur la page Pratiques
+  document.getElementById('pratiques-fade-top').classList.toggle('visible', page==='pratiques');
+  document.getElementById('pratiques-fade-bot').classList.toggle('visible', page==='pratiques');
+  // Flèche tombante — uniquement sur Pratiques
+  if(page==='pratiques'){ startPratiquesArrow(); } else { stopPratiquesArrow(); }
+  // Effet vague sur les pages avec contenu scrollable
+  if(page==='pratiques'||page==='festival'||page==='maison'||page==='hameau'){
+    // Léger délai pour que le DOM soit rendu avant d'initialiser l'observer
+    setTimeout(function(){ initWaveObserver(page); }, 40);
+  }
+}
+document.querySelectorAll('.npill').forEach(p=>p.addEventListener('click',()=>navTo(p.dataset.page)));
+document.getElementById('logo').addEventListener('click',()=>navTo('pratiques'));
+
+// ─── ADMIN ────────────────────────────────────────────────────────────────────
+const ap=document.getElementById('admin-panel');
+function setAdminOpen(isOpen){
+  ap.classList.toggle('open',isOpen);
+  document.getElementById('btn-admin').classList.toggle('active',isOpen);
+  document.body.classList.toggle('admin-open',isOpen);
+}
+document.getElementById('btn-admin').addEventListener('click',()=>{
+  const opening=!ap.classList.contains('open');
+  setAdminOpen(opening);
+  if(opening) navTo('carte');
+});
+document.getElementById('pw-cancel').addEventListener('click',()=>setAdminOpen(false));
+document.getElementById('pw-ok').addEventListener('click',login);
+document.getElementById('pw').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
+
+function login(){
+  if(document.getElementById('pw').value===PW){
+    document.getElementById('a-login').style.display='none';
+    document.getElementById('a-content').classList.add('vis');
+    document.getElementById('pw').value='';
+    document.getElementById('pw-err').style.display='none';
+    renderML();
+  } else {
+    document.getElementById('pw-err').style.display='block';
+    document.getElementById('pw').value='';
+  }
+}
+
+document.getElementById('btn-logout').addEventListener('click',()=>{
+  document.getElementById('a-login').style.display='flex';
+  document.getElementById('a-content').classList.remove('vis');
+  setAdminOpen(false);
+});
+
+let curT='son';
+document.querySelectorAll('.tp').forEach(p=>p.addEventListener('click',()=>{
+  document.querySelectorAll('.tp').forEach(x=>x.classList.remove('on'));
+  p.classList.add('on'); curT=p.dataset.t;
+  // #zf : fichier upload (son, photo) — masqué pour vidéo, texte, mounas
+  document.getElementById('zf').style.display=(curT==='texte'||curT==='mounas'||curT==='video')?'none':'block';
+  // #zv : URL YouTube — visible uniquement pour vidéo
+  document.getElementById('zv').style.display=curT==='video'?'block':'none';
+  document.getElementById('zt').style.display=curT==='texte'?'block':'none';
+  document.getElementById('zr').style.display=curT==='son'?'block':'none';
+}));
+
+document.getElementById('m-rad').addEventListener('input',function(){
+  document.getElementById('radlbl').textContent=this.value+' px';
+});
+// Conversion en base64 via FileReader — ajout au tableau pendingMedia
+document.getElementById('m-file').addEventListener('change',function(){
+  const file=this.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    pendingMedia.push({name:file.name, src:e.target.result, caption:file.name});
+    renderPendingMedia();
+  };
+  reader.readAsDataURL(file);
+  this.value=''; // reset input pour permettre d'ajouter le même fichier à nouveau
+});
+
+let placing=false,pending=null;
+
+// ── Médias en attente (multi-fichiers base64) ──────────────────────────────
+let pendingMedia=[]; // [{name, src (base64), caption}]
+
+function renderPendingMedia(){
+  const el=document.getElementById('pending-media-list');
+  if(!el)return;
+  el.innerHTML=pendingMedia.length
+    ? pendingMedia.map((m,i)=>`<div class="pm-item"><span class="pm-name">${m.name}</span><button class="pm-rm" onclick="removePendingMedia(${i})">×</button></div>`).join('')
+    : '';
+}
+function removePendingMedia(i){ pendingMedia.splice(i,1); renderPendingMedia(); }
+
+// Réinitialise le formulaire d'ajout (mais pas le type ni la légende)
+function resetAdminForm(){
+  document.getElementById('m-cap').value='';
+  document.getElementById('m-txt').value='';
+  document.getElementById('m-file').value='';
+  document.getElementById('m-yt').value='';
+  pendingMedia=[];
+  renderPendingMedia();
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+document.getElementById('btn-place').addEventListener('click',()=>{
+  const cap=document.getElementById('m-cap').value.trim()||'Sans légende';
+  const txt=document.getElementById('m-txt').value.trim();
+  const rad=parseInt(document.getElementById('m-rad').value);
+  // Pour le type vidéo : on utilise l'URL YouTube directement (pas de base64)
+  let media;
+  if(curT==='video'){
+    const ytUrl=document.getElementById('m-yt').value.trim();
+    media=ytUrl ? [{src:ytUrl, caption:cap}] : [];
+  } else {
+    // Autres types : fichiers base64 en attente
+    media=pendingMedia.map(m=>({src:m.src, caption:m.name}));
+  }
+  pending={type:curT, caption:cap, text:txt, radius:rad, media};
+
+  if(editingId!==null){
+    // Mode édition : mettre à jour le point existant
+    const ptIdx=pts.findIndex(p=>p.id===editingId);
+    if(ptIdx>=0){
+      const oldPt=pts[ptIdx];
+      // Si aucun nouveau fichier ajouté → on garde les médias existants
+      const newMedia=media.length>0 ? media : (oldPt.media||[]);
+      pts[ptIdx]={id:editingId, type:curT, caption:cap, text:txt, radius:rad, lat:oldPt.lat, lng:oldPt.lng, media:newMedia};
+      if(mkrs[editingId]&&map) map.removeLayer(mkrs[editingId]);
+      createMk(pts[ptIdx]);
+      applyMediaFilter();
+      renderML();savePts();
+      toast('Média mis à jour');
+      editingId=null;
+      document.getElementById('btn-place').textContent='Placer →';
+    }
+    resetAdminForm();
+    return;
+  }
+
+  // Mode placement normal — on attend le clic sur la carte
+  placing=true;
+  document.getElementById('pbar').classList.add('on');
+  document.getElementById('map').style.cursor='crosshair';
+  ap.classList.remove('open');
+  document.getElementById('btn-admin').classList.remove('active');
+});
+
+document.getElementById('pcancel').addEventListener('click',cancelPlace);
+function cancelPlace(){
+  placing=false; pending=null;
+  document.getElementById('pbar').classList.remove('on');
+  document.getElementById('map').style.cursor='';
+}
+
+function renderML(){
+  const el=document.getElementById('mlist');
+  if(!pts.length){el.innerHTML='<div style="font-size:12px;color:#999;text-align:center;padding:10px 0;">Aucun média</div>';return;}
+  el.innerHTML=pts.map(p=>{
+    // Icône SVG du type (16×16) ou fallback point coloré
+    const icoFile=TYPE_ICON[p.type];
+    const icoEl=icoFile
+      ? `<img src="icons/${icoFile}" class="mi-icon" alt="${p.type}">`
+      : `<div class="mi-d" style="background:${tc(p.type)}"></div>`;
+    // Badge si plusieurs médias
+    const cnt=(p.media&&p.media.length>1)?`<span class="mi-cnt">${p.media.length}</span>`:'';
+    return`<div class="mi">${icoEl}<span class="mi-n">${p.caption}</span><span class="mi-t">${TYPE_LABEL[p.type]||p.type}</span>${cnt}<button class="mi-e" onclick="editPt(${p.id})">✎</button><button class="mi-x" onclick="delPt(${p.id})">×</button></div>`;
+  }).join('');
+}
+function tc(t){return{son:'#111',video:'#3D6B4F',photo:'#111',texte:'#7B6EA0',mounas:'#C8502A'}[t]||'#999';}
+function delPt(id){
+  if(mkrs[id]){ if(map) map.removeLayer(mkrs[id]); delete mkrs[id]; }
+  pts=pts.filter(p=>p.id!==id); renderML(); savePts();
+}
+
+let editingId=null;
+function editPt(id){
+  const pt=pts.find(p=>p.id===id);
+  if(!pt)return;
+  editingId=id;
+  document.getElementById('m-cap').value=pt.caption||'';
+  document.getElementById('m-txt').value=pt.text||'';
+  document.getElementById('m-rad').value=pt.radius||60;
+  document.getElementById('radlbl').textContent=(pt.radius||60)+' px';
+  // Sélectionner le bon type
+  document.querySelectorAll('.tp').forEach(x=>x.classList.remove('on'));
+  document.querySelector(`.tp[data-t="${pt.type}"]`).classList.add('on');
+  curT=pt.type;
+  document.getElementById('zf').style.display=(curT==='texte'||curT==='mounas'||curT==='video')?'none':'block';
+  document.getElementById('zv').style.display=curT==='video'?'block':'none';
+  document.getElementById('zt').style.display=curT==='texte'?'block':'none';
+  document.getElementById('zr').style.display=curT==='son'?'block':'none';
+  document.getElementById('m-file').value='';
+  // Vidéo : pré-remplir le champ URL YouTube
+  if(curT==='video'){
+    document.getElementById('m-yt').value=(pt.media&&pt.media[0]&&pt.media[0].src)||'';
+    pendingMedia=[];
+  } else {
+    document.getElementById('m-yt').value='';
+    // Charger les médias existants dans pendingMedia (affichés dans la liste)
+    pendingMedia=(pt.media||[]).map(m=>({name:m.caption||'fichier', src:m.src, caption:m.caption}));
+  }
+  renderPendingMedia();
+  // Changer label du bouton
+  document.getElementById('btn-place').textContent='Mettre à jour →';
+  // Scroll vers le haut du formulaire
+  document.getElementById('a-content').scrollTop=0;
+}
+
+renderML();
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),2600);
+}
+
+// ─── FLÈCHE TOMBANTE (page Pratiques) ─────────────────────────────────────────
+// Tombe en boucle toutes les 5s (première chute à 0.8s) dès le premier accès à
+// Pratiques. Dès le premier scroll : la flèche disparaît et ne réapparaît PLUS
+// jamais pour toute la session, même en changeant d'onglet et en revenant.
+;(function(){
+  const arrow = document.getElementById('pratiques-arrow');
+  if(!arrow) return;
+
+  let _timer = null, _loopTimer = null, _stopped = true;
+  // Flag de session — une fois true, la flèche ne revient plus jamais
+  let _hasScrolled = false;
+
+  function _clearTimers(){ clearTimeout(_timer); clearTimeout(_loopTimer); }
+
+  function _hide(){
+    arrow.style.display    = 'none';
+    arrow.style.transition = 'none';
+    arrow.style.transform  = 'translateX(-50%) translateY(-1220px)';
+  }
+
+  function _fire(){
+    if(_stopped) return;
+    arrow.style.display    = 'block';
+    arrow.style.transition = 'none';
+    arrow.style.transform  = 'translateX(-50%) translateY(-1220px)';
+    void arrow.offsetWidth; // force reflow
+    arrow.style.transition = 'transform 800ms ease-in';
+    arrow.style.transform  = 'translateX(-50%) translateY(calc(100vh + 20px))';
+    _loopTimer = setTimeout(function(){
+      _hide();
+      if(!_stopped){ _timer = setTimeout(_fire, 5000 - 800); }
+    }, 820);
+  }
+
+  window.startPratiquesArrow = function(){
+    // Si l'utilisateur a déjà scrollé cette session → on ne relance jamais
+    if(_hasScrolled) return;
+    _clearTimers();
+    _stopped = false;
+    _hide();
+    _timer = setTimeout(_fire, 800);
+  };
+
+  window.stopPratiquesArrow = function(){
+    _stopped = true;
+    _clearTimers();
+    _hide();
+  };
+
+  // Premier scroll sur Pratiques → flag permanent + arrêt immédiat
+  const pratScroll = document.querySelector('#page-pratiques .pg-scroll');
+  if(pratScroll){
+    pratScroll.addEventListener('scroll', function(){
+      if(!_hasScrolled && pratScroll.scrollTop > 0){
+        _hasScrolled = true;
+        window.stopPratiquesArrow();
+      }
+    }, {passive:true});
+  }
+})();
+
+// ─── EFFET VAGUE SCROLL — boucle rAF continue ─────────────────────────────────
+// Remplace l'IntersectionObserver pour éliminer tout clignotement.
+// À chaque frame, getBoundingClientRect() mesure la position de chaque bloc
+// et applique directement opacity + transform en valeurs continues proportionnelles.
+//
+// Zones de transition (par rapport au conteneur scrollable) :
+//   Entrée bas  : le bloc remonte depuis le bas → translateY(+30→0), opacity(0→1)
+//   Zone visible : translateY(0), opacity(1)
+//   Sortie haut : le bloc sort par le haut → translateY(0→-30), opacity(1→0)
+//
+// La direction est implicite dans la géométrie — aucun seuil binaire ni classe CSS.
+function initWaveObserver(pageId){
+  const pageEl  = document.getElementById('page-' + pageId);
+  if(!pageEl) return;
+  const scrollEl = pageEl.querySelector('.pg-scroll');
+  const blocks   = pageEl.querySelectorAll('.wave-block');
+  if(!blocks.length) return;
+
+  // Nettoyage de l'itération précédente (si l'utilisateur revient sur la page)
+  if(pageEl._waveObs){ pageEl._waveObs.disconnect(); pageEl._waveObs = null; }
+  if(pageEl._waveRaf){ cancelAnimationFrame(pageEl._waveRaf); pageEl._waveRaf = null; }
+  if(scrollEl && pageEl._scrollHandler){
+    scrollEl.removeEventListener('scroll', pageEl._scrollHandler, {passive:true});
+    pageEl._scrollHandler = null;
+  }
+
+  // Désactiver toute transition CSS sur les blocs — tout est géré inline frame par frame
+  blocks.forEach(function(b){
+    b.style.transition = 'none';
+    b.style.willChange = 'opacity, transform';
+    b.classList.remove('wave-in', 'wave-out');
+  });
+
+  function clamp(v, lo, hi){ return v < lo ? lo : v > hi ? hi : v; }
+  // Ease in-out pour adoucir les transitions
+  function ease(t){ return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+
+  function updateBlocks(){
+    // Auto-arrêt dès que la page n'est plus active
+    if(!pageEl.classList.contains('active')){ pageEl._waveRaf = null; return; }
+
+    // Bounds du conteneur scrollable (zone root)
+    const rootRect   = scrollEl ? scrollEl.getBoundingClientRect()
+                                 : {top:0, bottom:window.innerHeight, height:window.innerHeight};
+    const rootTop    = rootRect.top;
+    const rootBottom = rootRect.bottom;
+    const rootH      = rootRect.height;
+
+    // Taille de la zone de fondu : 28% de la hauteur du conteneur (min 80px)
+    const zone = Math.max(80, rootH * 0.28);
+
+    blocks.forEach(function(b){
+      const r = b.getBoundingClientRect();
+
+      // t_enter : 0→1 au fur et à mesure que le bloc entre par le bas
+      //   0 quand le haut du bloc est au bas du root, 1 quand il a remonté d'une "zone"
+      const t_enter = clamp((rootBottom - r.top) / zone, 0, 1);
+
+      // t_exit : 1→0 au fur et à mesure que le bloc sort par le haut
+      //   1 quand le bas du bloc dépasse rootTop d'une "zone", 0 quand il a quitté le root
+      const t_exit  = clamp((r.bottom - rootTop) / zone, 0, 1);
+
+      // t = min des deux → 0 à l'entrée basse, 1 en zone visible, 0 à la sortie haute
+      const t  = ease(Math.min(t_enter, t_exit));
+      const op = t;
+
+      // Direction du translateY :
+      //   entrée depuis le bas (t_enter pilote) → +30→0
+      //   sortie par le haut  (t_exit pilote)   → 0→-30
+      let ty = 0;
+      if(t_enter <= t_exit){
+        ty = 30 * (1 - t);   // entrée : descend de 30px vers 0
+      } else {
+        ty = -30 * (1 - t);  // sortie : monte de 0 vers -30px
+      }
+
+      const sc = 0.92 + 0.08 * t;
+
+      b.style.opacity   = op.toFixed(4);
+      b.style.transform = 'translateY(' + ty.toFixed(2) + 'px) scale(' + sc.toFixed(4) + ')';
+    });
+
+    pageEl._waveRaf = requestAnimationFrame(updateBlocks);
+  }
+
+  // Lancer la boucle
+  pageEl._waveRaf = requestAnimationFrame(updateBlocks);
+}
+
+// ─── CURSEUR CUSTOM ───────────────────────────────────────────────────────────
+;(function(){
+  if(!window.matchMedia('(pointer:fine)').matches) return;
+  const cur = document.getElementById('cursor');
+  let mx=0, my=0, cx=0, cy=0;
+
+  // Éléments qui font grossir le rond
+  const SEL = 'a,button,[role="button"],.li,.mp-lk,.leaflet-marker-icon,.leaflet-interactive';
+
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    if(cur.style.opacity !== '1') cur.style.opacity = '1';
+  });
+  document.addEventListener('mouseover', e => { if(e.target.closest(SEL)) cur.classList.add('big'); });
+  document.addEventListener('mouseout',  e => { if(e.target.closest(SEL)) cur.classList.remove('big'); });
+  document.addEventListener('mouseleave', () => cur.style.opacity = '0');
+  document.addEventListener('mouseenter', () => cur.style.opacity = '1');
+
+  function lerp(a,b,t){ return a+(b-a)*t; }
+
+  (function tick(){
+    cx = lerp(cx, mx, 0.18);
+    cy = lerp(cy, my, 0.18);
+    // translate(x,y) pour le suivi + translate(-50%,-50%) pour centrer le rond
+    cur.style.transform = 'translate('+cx+'px,'+cy+'px) translate(-50%,-50%)';
+    requestAnimationFrame(tick);
+  })();
+})();
+</script>
+</body>
+</html>
