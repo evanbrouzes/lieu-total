@@ -1317,11 +1317,11 @@ function mkHTML(type){
   const w=`position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;`;
   const box=`display:flex;align-items:center;justify-content:center;overflow:hidden;width:20px;height:20px;position:relative;z-index:2;`;
   const ico=(file)=>`<div style="${box}"><img src="icons/${file}" style="width:100%;height:100%;object-fit:contain;display:block;" onerror="this.style.display='none'"></div>`;
-  if(type==='son')    return`<div style="${w}">${ico('SON.svg')}</div>`;
-  if(type==='video')  return`<div style="${w}">${ico('VIDéo.svg')}</div>`;
-  if(type==='photo')  return`<div style="${w}">${ico('PHOTO.svg')}</div>`;
-  if(type==='texte')  return`<div style="${w}">${ico('TEXTE.svg')}</div>`;
-  if(type==='mounas') return`<div style="${w}">${ico('MOUNAS.svg')}</div>`;
+  if(type==='son')    return`<div style="${w}">${ico('son.svg')}</div>`;
+  if(type==='video')  return`<div style="${w}">${ico('video.svg')}</div>`;
+  if(type==='photo')  return`<div style="${w}">${ico('photo.svg')}</div>`;
+  if(type==='texte')  return`<div style="${w}">${ico('texte.svg')}</div>`;
+  if(type==='mounas') return`<div style="${w}">${ico('mounas.svg')}</div>`;
   return`<div style="${w}"><div style="width:12px;height:12px;border-radius:50%;background:#111;"></div></div>`;
 }
 
