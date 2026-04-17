@@ -181,6 +181,9 @@ html,body { height:100%; font-family:var(--f); background:var(--bg); color:var(-
 
 /* === LEAFLET === */
 .leaflet-container { font-family:var(--f); }
+/* Garantir que les couches GeoJSON (overlay) s'affichent au-dessus des tuiles */
+.leaflet-overlay-pane { z-index:400!important; }
+.leaflet-tile-pane    { z-index:200!important; }
 .leaflet-control-zoom {
   background:var(--glass-bg)!important;
   backdrop-filter:blur(20px)!important;
@@ -237,9 +240,9 @@ html,body { height:100%; font-family:var(--f); background:var(--bg); color:var(-
 .ln { font-size:12px; font-weight:400; flex:1; }
 /* Icônes SVG dans la section Médias du panneau gauche */
 /* Inactif : gris clair #BBBBBB → opacity(0.27) sur noir = rgb(187,187,187) */
-.mf-icon { width:16px; height:16px; object-fit:contain; flex-shrink:0; filter:brightness(0) opacity(0.27); transition:filter .18s; }
+.mf-icon { width:16px; height:16px; object-fit:contain; flex-shrink:0; filter:grayscale(1) brightness(0); opacity:0.3; transition:filter .18s, opacity .18s; }
 /* Actif (toggle on) : noir #111 */
-.mf-btn.on .mf-icon { filter:brightness(0); }
+.mf-btn.on .mf-icon { filter:brightness(0); opacity:1; }
 /* Toggle pill iOS */
 .li-toggle { width:36px; height:20px; background:#e0e0e0; border-radius:100px; position:relative; flex-shrink:0; margin-left:auto; transition:background .2s ease; pointer-events:none; }
 .li-toggle-knob { position:absolute; top:3px; left:3px; width:14px; height:14px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25); transition:transform .2s ease; }
@@ -670,64 +673,64 @@ body.admin-open #eye-btn-fixed { right: calc(320px + var(--gap) + 12px); }
       <section class="prat-sec wave-block">
         <h3 class="prat-h">Habiter</h3>
         <ol class="prat-list">
-          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Réunir les trois lieux de vie — Le lieu total intègre en son sein le lieu d'habitation, le lieu de travail et le lieu d'échange, de partage</li>
-          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Équilibrer l'intime et le commun — Accorder 80% de l'espace aux usages partagés et 20% à l'isolement</li>
-          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Usages pluriels et rythmés — Concevoir des espaces pluriels, ouverts à la transformation, à la multiplicité des pratiques, des temporalités et aux cycles naturels et humains</li>
-          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Préserver les zones non productives — Maintenir des espaces libres de toute contrainte, en offrant des zones tampons de retrait ou de transition propices à la contemplation, le rêve, la prière et à la créativité</li>
-          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Favoriser la libre durée — Permettre à chacun·e de choisir la durée de sa résidence en échange d'une contribution solidaire</li>
+          <li><span class="prat-icon" aria-hidden="true" style="flex-shrink:0;margin-top:2px;color:#BBBBBB;font-size:11px;line-height:2">→</span>Réunir les trois lieux de vie — Le lieu total intègre en son sein le lieu d'habitation, le lieu de travail et le lieu d'échange, de partage</li>
+          <li><span class="prat-icon" aria-hidden="true" style="flex-shrink:0;margin-top:2px;color:#BBBBBB;font-size:11px;line-height:2;">→</span>Équilibrer l'intime et le commun — Accorder 80% de l'espace aux usages partagés et 20% à l'isolement</li>
+          <li><span class="prat-icon" aria-hidden="true" style="flex-shrink:0;margin-top:2px;color:#BBBBBB;font-size:11px;line-height:2;">→</span>Usages pluriels et rythmés — Concevoir des espaces pluriels, ouverts à la transformation, à la multiplicité des pratiques, des temporalités et aux cycles naturels et humains</li>
+          <li><span class="prat-icon" aria-hidden="true" style="flex-shrink:0;margin-top:2px;color:#BBBBBB;font-size:11px;line-height:2;">→</span>Préserver les zones non productives — Maintenir des espaces libres de toute contrainte, en offrant des zones tampons de retrait ou de transition propices à la contemplation, le rêve, la prière et à la créativité</li>
+          <li><span class="prat-icon" aria-hidden="true" style="flex-shrink:0;margin-top:2px;color:#BBBBBB;font-size:11px;line-height:2;">→</span>Favoriser la libre durée — Permettre à chacun·e de choisir la durée de sa résidence en échange d'une contribution solidaire</li>
         </ol>
       </section>
 
       <section class="prat-sec wave-block">
         <h3 class="prat-h">Consommer</h3>
         <ol class="prat-list">
-          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Cultiver la sobriété et l'autonomie — Le lieu se veut simple, mesuré, limité à l'essentiel : une architecture sans excès, au service de la vie. Les ressources utilisées sont au maximum produites, pensées, choisies et justifiées</li>
-          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Manger localement — L'alimentation est produite et/ou provient d'un territoire proche, dans un rayon de 30km</li>
-          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Honorer la matière du lieu — Les constructions s'ancrent dans le sol qu'elles habitent : matériaux du terrain, textures du climat, empreinte réduite</li>
+          <li><span class="prat-icon" aria-hidden="true" style="flex-shrink:0;margin-top:2px;color:#BBBBBB;font-size:11px;line-height:2;">→</span>Cultiver la sobriété et l'autonomie — Le lieu se veut simple, mesuré, limité à l'essentiel : une architecture sans excès, au service de la vie. Les ressources utilisées sont au maximum produites, pensées, choisies et justifiées</li>
+          <li><span class="prat-icon" aria-hidden="true" style="flex-shrink:0;margin-top:2px;color:#BBBBBB;font-size:11px;line-height:2;">→</span>Manger localement — L'alimentation est produite et/ou provient d'un territoire proche, dans un rayon de 30km</li>
+          <li><span class="prat-icon" aria-hidden="true" style="flex-shrink:0;margin-top:2px;color:#BBBBBB;font-size:11px;line-height:2;">→</span>Honorer la matière du lieu — Les constructions s'ancrent dans le sol qu'elles habitent : matériaux du terrain, textures du climat, empreinte réduite</li>
         </ol>
       </section>
 
       <section class="prat-sec wave-block">
         <h3 class="prat-h">Gouverner</h3>
         <ol class="prat-list">
-          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Gouverner horizontalement — La gestion se répartit horizontalement : chaque habitant, quelle que soit son âge ou son statut, dispose d'une voix égale dans les décisions</li>
-          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Répartir les pôles essentiels — Des pôles sont gérés sur un principe d'épistocratie : Agriculture et autosuffisance, Construction et habitat, Énergie et ressources, Vie quotidienne et convivialité, Gouvernance et accueil, Économie et liens externes</li>
-          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Pratiquer la rotation et la révocabilité — Les responsabilités ne sont jamais figées : elles tournent, se partagent, se réinventent au fil du temps et des capacités</li>
-          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Faire du temps une matière de projet — Prévoir, phaser, anticiper, le paysage est la trace visible du passage du temps</li>
+          <li><span class="prat-icon" aria-hidden="true" style="flex-shrink:0;margin-top:2px;color:#BBBBBB;font-size:11px;line-height:2;">→</span>Gouverner horizontalement — La gestion se répartit horizontalement : chaque habitant, quelle que soit son âge ou son statut, dispose d'une voix égale dans les décisions</li>
+          <li><span class="prat-icon" aria-hidden="true" style="flex-shrink:0;margin-top:2px;color:#BBBBBB;font-size:11px;line-height:2;">→</span>Répartir les pôles essentiels — Des pôles sont gérés sur un principe d'épistocratie : Agriculture et autosuffisance, Construction et habitat, Énergie et ressources, Vie quotidienne et convivialité, Gouvernance et accueil, Économie et liens externes</li>
+          <li><span class="prat-icon" aria-hidden="true" style="flex-shrink:0;margin-top:2px;color:#BBBBBB;font-size:11px;line-height:2;">→</span>Pratiquer la rotation et la révocabilité — Les responsabilités ne sont jamais figées : elles tournent, se partagent, se réinventent au fil du temps et des capacités</li>
+          <li><span class="prat-icon" aria-hidden="true" style="flex-shrink:0;margin-top:2px;color:#BBBBBB;font-size:11px;line-height:2;">→</span>Faire du temps une matière de projet — Prévoir, phaser, anticiper, le paysage est la trace visible du passage du temps</li>
         </ol>
       </section>
 
       <section class="prat-sec wave-block">
         <h3 class="prat-h">Transmettre</h3>
         <ol class="prat-list">
-          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Partager les savoirs dans l'unité — L'homogénéité des connaissances fonde la cohésion du lieu, mais chaque pôle garde sa responsabilité, sa voix propre</li>
-          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Ancrer le lieu dans son territoire — Le lieu total ne s'isole pas : il devient ressource, partenaire, acteur du voisinage et de la vie locale. Il soutient la vitalité du bassin de vie, partage ses savoirs, ses productions et ses infrastructures</li>
-          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Expérimenter et se métamorphoser — Le lieu est vivant, il crée, transforme, expérimente, évolue sans fin. Ne rien figer, ne rien sacraliser, chaque acquis doit pouvoir être remis en jeu. Le lieu n'est jamais terminé : c'est une recherche en acte, un terrain d'essais collectif</li>
-          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Faire de l'atelier un cœur battant — L'atelier est l'espace central du faire, où se croisent la main, la matière et l'idée. C'est là que le lieu apprend à se réinventer</li>
+          <li><span class="prat-icon" aria-hidden="true" style="flex-shrink:0;margin-top:2px;color:#BBBBBB;font-size:11px;line-height:2;">→</span>Partager les savoirs dans l'unité — L'homogénéité des connaissances fonde la cohésion du lieu, mais chaque pôle garde sa responsabilité, sa voix propre</li>
+          <li><span class="prat-icon" aria-hidden="true" style="flex-shrink:0;margin-top:2px;color:#BBBBBB;font-size:11px;line-height:2;">→</span>Ancrer le lieu dans son territoire — Le lieu total ne s'isole pas : il devient ressource, partenaire, acteur du voisinage et de la vie locale. Il soutient la vitalité du bassin de vie, partage ses savoirs, ses productions et ses infrastructures</li>
+          <li><span class="prat-icon" aria-hidden="true" style="flex-shrink:0;margin-top:2px;color:#BBBBBB;font-size:11px;line-height:2;">→</span>Expérimenter et se métamorphoser — Le lieu est vivant, il crée, transforme, expérimente, évolue sans fin. Ne rien figer, ne rien sacraliser, chaque acquis doit pouvoir être remis en jeu. Le lieu n'est jamais terminé : c'est une recherche en acte, un terrain d'essais collectif</li>
+          <li><span class="prat-icon" aria-hidden="true" style="flex-shrink:0;margin-top:2px;color:#BBBBBB;font-size:11px;line-height:2;">→</span>Faire de l'atelier un cœur battant — L'atelier est l'espace central du faire, où se croisent la main, la matière et l'idée. C'est là que le lieu apprend à se réinventer</li>
         </ol>
       </section>
 
       <section class="prat-sec wave-block">
         <h3 class="prat-h">Accueillir</h3>
         <ol class="prat-list">
-          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Pratiquer l'inclusion — Le lieu accueille toutes les personnes et reconnaît toutes les identités, sans exclusion ni hiérarchie</li>
-          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Accueillir toutes les spiritualités — Un lieu pluriculturel et pluri-culte, ouvert à ceux qui croient ou non, prient, méditent ou se taisent</li>
-          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Établir une charte d'engagement inclusive — Chaque membre l'accepte comme fondement éthique. Son non-respect mène à une convocation et à la décision commune en assemblée</li>
+          <li><span class="prat-icon" aria-hidden="true" style="flex-shrink:0;margin-top:2px;color:#BBBBBB;font-size:11px;line-height:2;">→</span>Pratiquer l'inclusion — Le lieu accueille toutes les personnes et reconnaît toutes les identités, sans exclusion ni hiérarchie</li>
+          <li><span class="prat-icon" aria-hidden="true" style="flex-shrink:0;margin-top:2px;color:#BBBBBB;font-size:11px;line-height:2;">→</span>Accueillir toutes les spiritualités — Un lieu pluriculturel et pluri-culte, ouvert à ceux qui croient ou non, prient, méditent ou se taisent</li>
+          <li><span class="prat-icon" aria-hidden="true" style="flex-shrink:0;margin-top:2px;color:#BBBBBB;font-size:11px;line-height:2;">→</span>Établir une charte d'engagement inclusive — Chaque membre l'accepte comme fondement éthique. Son non-respect mène à une convocation et à la décision commune en assemblée</li>
         </ol>
       </section>
 
       <section class="prat-sec wave-block">
         <h3 class="prat-h">Soigner</h3>
         <ol class="prat-list">
-          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Prendre soin du corps, de l'esprit et du groupe — Le soin est primordial : il soutient la cohésion, apaise les tensions et rend possible la vie commune</li>
+          <li><span class="prat-icon" aria-hidden="true" style="flex-shrink:0;margin-top:2px;color:#BBBBBB;font-size:11px;line-height:1.7;">→</span>Prendre soin du corps, de l'esprit et du groupe — Le soin est primordial : il soutient la cohésion, apaise les tensions et rend possible la vie commune</li>
         </ol>
       </section>
 
       <section class="prat-sec wave-block">
         <h3 class="prat-h">Fêter</h3>
         <ol class="prat-list">
-          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Célébrer la vie — La fête, les saisons, les réussites et les passages rythment l'existence du lieu. Célébrer, c'est reconnaître la vitalité du collectif</li>
-          <li><svg class="prat-icon" width="11" height="11" viewBox="0 0 10 10" fill="#BBBBBB" aria-hidden="true"><polygon points="5,0 10,10 0,10"/></svg>Le rapport à l'excès — Chacun est responsable de ses élans et de ses excès, tant qu'ils ne blessent ni ne restreignent les autres. La joie est commune quand elle respecte le cercle</li>
+          <li><span class="prat-icon" aria-hidden="true" style="flex-shrink:0;margin-top:2px;color:#BBBBBB;font-size:11px;line-height:1.7;">→</span>Célébrer la vie — La fête, les saisons, les réussites et les passages rythment l'existence du lieu. Célébrer, c'est reconnaître la vitalité du collectif</li>
+          <li><span class="prat-icon" aria-hidden="true" style="flex-shrink:0;margin-top:2px;color:#BBBBBB;font-size:11px;line-height:1.7;">→</span>Le rapport à l'excès — Chacun est responsable de ses élans et de ses excès, tant qu'ils ne blessent ni ne restreignent les autres. La joie est commune quand elle respecte le cercle</li>
         </ol>
       </section>
 
@@ -1192,19 +1195,19 @@ const TYPE_ICON = {son:'son.svg', video:'video.svg', photo:'photo.svg', texte:'t
 const LAYERS = [
   // weight:0 + stroke:false = aplat sans contour (défaut pour zones remplies)
   {id:'cimetiere',  label:'Cimetière',             color:'#9B89B4', file:'cimetiere.geojson',
-   lstyle:{weight:0,stroke:false,fillColor:'#9B89B4',fillOpacity:.35}},
+   lstyle:{weight:1,stroke:true,color:'#9B89B4',fillColor:'#9B89B4',fillOpacity:.35}},
   {id:'sport',      label:'Équipements sportifs',  color:'#E8A0A0', file:'equipements_sportifs.geojson',
-   lstyle:{weight:0,stroke:false,fillColor:'#E8A0A0',fillOpacity:.35}},
+   lstyle:{weight:1,stroke:true,color:'#E8A0A0',fillColor:'#E8A0A0',fillOpacity:.35}},
   {id:'forets',     label:'Forêts',                color:'#3D6B4F', file:'forets.geojson',
-   lstyle:{weight:0,stroke:false,fillColor:'#3D6B4F',fillOpacity:.35}},
+   lstyle:{weight:1,stroke:true,color:'#3D6B4F',fillColor:'#3D6B4F',fillOpacity:.35}},
   {id:'mounas',     label:'Mounas',                color:'#C8502A', on:true, file:'mounas.geojson',
-   lstyle:{weight:0,stroke:false,fillColor:'#C8502A',fillOpacity:.35}},
+   lstyle:{weight:1.5,stroke:true,color:'#C8502A',fillColor:'#C8502A',fillOpacity:.35}},
   {id:'ressources', label:'Ressources & matériaux',color:'#B5834A', file:'ressources_et_materiaux.geojson',
-   lstyle:{weight:0,stroke:false,fillColor:'#B5834A',fillOpacity:.35}},
+   lstyle:{weight:1,stroke:true,color:'#B5834A',fillColor:'#B5834A',fillOpacity:.35}},
   {id:'sols',       label:'Sols construits',       color:'#AAAAAA',                                   // fichier à venir
-   lstyle:{weight:0,stroke:false,fillColor:'#AAAAAA',fillOpacity:.45}},
+   lstyle:{weight:1,stroke:true,color:'#AAAAAA',fillColor:'#AAAAAA',fillOpacity:.45}},
   {id:'agricole',   label:'Terres agricoles',      color:'#C8B84A', on:true, file:'terres_agricoles.geojson',
-   special:'hachure'},                                                                                 // hachure SVG
+   lstyle:{weight:1,stroke:true,color:'#C8B84A',fillColor:'#C8B84A',fillOpacity:.35}},               // aplat solide (hachure SVG trop instable avec Leaflet)
   {id:'topo',       label:'Topographie',           color:'#8B6914', file:'topographie.geojson',
    lstyle:{weight:1,stroke:true,color:'#8B6914',dashArray:'4 6',fillOpacity:0,fill:false}},
   {id:'ferree',     label:'Voie ferrée',            color:'#333333',                                   // fichier à venir
@@ -1304,9 +1307,13 @@ function applyMediaFilter(){
     if(!mkrs[p.id])return;
     const m=mkrs[p.id];
     const on=active.includes(p.type);
-    m.setOpacity(on?1:.25);
+    m.setOpacity(1);
     const el=m.getElement();
-    if(el) el.style.pointerEvents=on?'auto':'none';
+    if(el){
+      el.style.filter = on ? 'none' : 'grayscale(1)';
+      el.style.opacity = on ? '1' : '0.3';
+      el.style.pointerEvents = on ? 'auto' : 'none';
+    }
     if(!on&&m.isPopupOpen()) m.closePopup();
   });
 }
@@ -1443,13 +1450,8 @@ function initMap(){
 
   // Créer les couches GeoJSON vides + injecter les données déjà reçues (pendingData)
   LAYERS.forEach(c=>{
-    let layer;
-    if(c.special==='hachure'){
-      layer=L.geoJSON(null,{style:()=>({weight:0,stroke:false,fillColor:'url(#hachure-agri)',fillOpacity:1}),onEachFeature:tooltipFn(c)});
-    } else {
-      const s=c.lstyle||{color:c.color,weight:1.5,opacity:.8,fillColor:c.color,fillOpacity:.18};
-      layer=L.geoJSON(null,{style:s,onEachFeature:tooltipFn(c)});
-    }
+    const s=c.lstyle||{color:c.color,weight:1,stroke:true,fillColor:c.color,fillOpacity:.35};
+    const layer=L.geoJSON(null,{style:s,onEachFeature:tooltipFn(c)});
     lobj[c.id]=layer;
     layerVisible[c.id] = c.on !== false;
     // Injecter les données déjà arrivées avant l'init de la carte
