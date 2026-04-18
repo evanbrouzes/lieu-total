@@ -4,27 +4,28 @@
 const CACHE_NAME = 'lieu-total-v1';
 
 // Fichiers à mettre en cache au premier chargement
+const BASE = '/lieu-total';
 const PRECACHE = [
-  '/',
-  '/index.html',
-  '/APPLI/manifest.json',
-  '/APPLI/icons/icon-192.png',
-  '/APPLI/icons/icon-512.png',
-  '/APPLI/icons/apple-touch-icon.png',
-  '/icons/logo.svg',
-  '/icons/oeil.svg',
-  '/icons/son.svg',
-  '/icons/video.svg',
-  '/icons/photo.svg',
-  '/icons/texte.svg',
-  '/icons/mounas.svg',
+  BASE + '/',
+  BASE + '/index.html',
+  BASE + '/APPLI/manifest.json',
+  BASE + '/APPLI/icons/icon-192.png',
+  BASE + '/APPLI/icons/icon-512.png',
+  BASE + '/APPLI/icons/apple-touch-icon.png',
+  BASE + '/icons/logo.svg',
+  BASE + '/icons/oeil.svg',
+  BASE + '/icons/son.svg',
+  BASE + '/icons/video.svg',
+  BASE + '/icons/photo.svg',
+  BASE + '/icons/texte.svg',
+  BASE + '/icons/mounas.svg',
   // GeoJSON (mis en cache pour usage hors ligne)
-  '/RESSOURCES/COUCHES/GEOJSON/cimetiere.geojson',
-  '/RESSOURCES/COUCHES/GEOJSON/equipements_sportifs.geojson',
-  '/RESSOURCES/COUCHES/GEOJSON/mounas.geojson',
-  '/RESSOURCES/COUCHES/GEOJSON/ressources_et_materiaux.geojson',
-  '/RESSOURCES/COUCHES/GEOJSON/terres_agricoles.geojson',
-  '/RESSOURCES/COUCHES/GEOJSON/topographie.geojson',
+  BASE + '/RESSOURCES/COUCHES/GEOJSON/cimetiere.geojson',
+  BASE + '/RESSOURCES/COUCHES/GEOJSON/equipements_sportifs.geojson',
+  BASE + '/RESSOURCES/COUCHES/GEOJSON/mounas.geojson',
+  BASE + '/RESSOURCES/COUCHES/GEOJSON/ressources_et_materiaux.geojson',
+  BASE + '/RESSOURCES/COUCHES/GEOJSON/terres_agricoles.geojson',
+  BASE + '/RESSOURCES/COUCHES/GEOJSON/topographie.geojson',
 ];
 
 // ── Installation : mise en cache initiale ─────────────────────────────────────
