@@ -690,31 +690,36 @@ body.admin-open #eye-btn-fixed { right: calc(320px + var(--gap) + 12px); }
   /* ── Bouton œil : haut droite, aligné centre logo ──────────────────────────
      Logo top:16px + height:36px → centre à 34px
      Bouton height:44px → top = 34 - 22 = 12px pour aligner les centres
+     z-index 2100 pour passer devant le gradient (1990) et le fond de carte
   ────────────────────────────────────────────────────────────────────────── */
   #eye-btn-fixed {
     top:12px; right:16px; bottom:auto;
     width:44px; height:44px;
+    z-index:2100;
   }
 
   /* ── Zoom Leaflet : masqué sur mobile (pinch natif) ─────────────────────── */
   .leaflet-control-zoom { display:none !important; }
 
   /* ── Panneau calques : slide-in depuis la gauche ─────────────────────────── */
+  /* z-index 2500 : passe devant logo (2000), gradient (1990), boutons (2100) */
   #layers-panel {
     position:fixed;
     top:0; left:0; bottom:0;
     width:min(280px,85vw); max-height:100vh;
     border-radius:0 20px 20px 0;
-    z-index:1500;
+    z-index:2500;
     transform:translateX(-100%);
     transition:transform .28s cubic-bezier(.4,0,.2,1);
     overflow-y:auto;
   }
+  /* Onglets Calque/Média décalés vers le bas pour dégager le logo */
+  #layers-panel .lp-tabs { padding-top:20px; margin-top:8px; }
   #layers-panel.mob-open { transform:translateX(0); }
 
   /* Overlay sombre derrière panneau calques */
   #layers-overlay {
-    display:none; position:fixed; inset:0; z-index:1400;
+    display:none; position:fixed; inset:0; z-index:2400;
     background:rgba(0,0,0,.32);
   }
   #layers-overlay.on { display:block; }
@@ -772,8 +777,12 @@ body.admin-open #eye-btn-fixed { right: calc(320px + var(--gap) + 12px); }
   .wave-block { transition:opacity .3s ease, transform .3s ease; }
 
   /* ── Flèche Pratiques : centrée, réduite ────────────────────────────────── */
-  /* transform combiné pour que l'animation JS (translateY) n'écrase pas le centrage */
-  #pratiques-arrow { width:240px; left:50%; transform:translateX(-50%) translateY(-1220px); }
+  /* SVG width:100% pour qu'il respecte la largeur du conteneur (pas de débord) */
+  #pratiques-arrow { width:200px; left:50%; transform:translateX(-50%) translateY(-1220px); }
+  #pratiques-arrow svg { width:100%; height:auto; }
+
+  /* ── Contenu bas : padding pour ne pas être caché par la tap bar ─────────── */
+  .pg-scroll { padding-bottom:calc(var(--nav-outer-h) + var(--gap) + 20px); }
 
   /* ── États :active à la place des :hover ────────────────────────────────── */
   .npill:hover { color:var(--ink2); transform:none; }
@@ -940,10 +949,10 @@ body.admin-open #eye-btn-fixed { right: calc(320px + var(--gap) + 12px); }
   <div id="layers-overlay"></div>
   <!-- Bouton toggle panneau calques (mobile uniquement, affiché via CSS) -->
   <button id="layers-toggle-btn" aria-label="Afficher les calques">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
-      <rect x="2" y="4" width="16" height="3" rx="1"/>
-      <rect x="2" y="9" width="16" height="3" rx="1"/>
-      <rect x="2" y="14" width="16" height="3" rx="1"/>
+    <svg viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <!-- Deux rectangles décalés = langage "calques" -->
+      <rect x="1" y="7" width="13" height="10" rx="2" opacity="0.28"/>
+      <rect x="6" y="3" width="13" height="10" rx="2"/>
     </svg>
   </button>
   <div id="layers-panel">
@@ -1927,6 +1936,11 @@ function navTo(page){
   document.getElementById('pratiques-fade-bot').classList.toggle('visible', page==='pratiques');
   // Flèche tombante — uniquement sur Pratiques
   if(page==='pratiques'){ startPratiquesArrow(); } else { stopPratiquesArrow(); }
+  // Réinitialiser le scroll des pages de contenu à chaque navigation
+  if(page==='pratiques'||page==='festival'||page==='maison'||page==='hameau'){
+    const scEl = document.querySelector('#page-'+page+' .pg-scroll');
+    if(scEl) scEl.scrollTop = 0;
+  }
   // Effet vague sur les pages avec contenu scrollable
   if(page==='pratiques'||page==='festival'||page==='maison'||page==='hameau'){
     // Léger délai pour que le DOM soit rendu avant d'initialiser l'observer
