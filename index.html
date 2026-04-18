@@ -1195,21 +1195,21 @@ const TYPE_ICON = {son:'son.svg', video:'video.svg', photo:'photo.svg', texte:'t
 const LAYERS = [
   // weight:0 + stroke:false = aplat sans contour (défaut pour zones remplies)
   {id:'cimetiere',  label:'Cimetière',             color:'#9B89B4', on:false, file:'cimetiere.geojson',
-   lstyle:{weight:1,stroke:true,color:'#9B89B4',fillColor:'#9B89B4',fillOpacity:.35}},
+   lstyle:{weight:0,stroke:false,fillColor:'#9B89B4',fillOpacity:.35}},
   {id:'sport',      label:'Équipements sportifs',  color:'#E8A0A0', on:false, file:'equipements_sportifs.geojson',
-   lstyle:{weight:1,stroke:true,color:'#E8A0A0',fillColor:'#E8A0A0',fillOpacity:.35}},
+   lstyle:{weight:0,stroke:false,fillColor:'#E8A0A0',fillOpacity:.35}},
   {id:'forets',     label:'Forêts',                color:'#3D6B4F', on:false, file:'forets.geojson',
-   lstyle:{weight:1,stroke:true,color:'#3D6B4F',fillColor:'#3D6B4F',fillOpacity:.35}},
+   special:'stipple'},
   {id:'mounas',     label:'Mounas',                color:'#C8502A', on:true,  file:'mounas.geojson',
-   lstyle:{weight:1.5,stroke:true,color:'#C8502A',fillColor:'#C8502A',fillOpacity:.35}},
+   lstyle:{weight:0,stroke:false,fillColor:'#C8502A',fillOpacity:.35}},
   {id:'ressources', label:'Ressources & matériaux',color:'#B5834A', on:false, file:'ressources_et_materiaux.geojson',
-   lstyle:{weight:1,stroke:true,color:'#B5834A',fillColor:'#B5834A',fillOpacity:.35}},
+   lstyle:{weight:0,stroke:false,fillColor:'#B5834A',fillOpacity:.35}},
   {id:'sols',       label:'Sols construits',       color:'#AAAAAA', on:false,                         // fichier à venir
-   lstyle:{weight:1,stroke:true,color:'#AAAAAA',fillColor:'#AAAAAA',fillOpacity:.45}},
+   lstyle:{weight:0,stroke:false,fillColor:'#AAAAAA',fillOpacity:.45}},
   {id:'agricole',   label:'Terres agricoles',      color:'#C8B84A', on:false, file:'terres_agricoles.geojson',
-   lstyle:{weight:1,stroke:true,color:'#C8B84A',fillColor:'#C8B84A',fillOpacity:.35}},
+   special:'hachure'},
   {id:'topo',       label:'Topographie',           color:'#8B6914', on:false, file:'topographie.geojson',
-   lstyle:{weight:1,stroke:true,color:'#8B6914',dashArray:'4 6',fillOpacity:0,fill:false}},
+   lstyle:{weight:1.5,stroke:true,color:'#8B6914',dashArray:'4 6',fillOpacity:0,fill:false}},
   {id:'ferree',     label:'Voie ferrée',            color:'#333333',                                   // fichier à venir
    lstyle:{weight:3,stroke:true,color:'#333333',dashArray:'10 4',fillOpacity:0,fill:false}},
   {id:'hydro',      label:'Hydrographie',           color:'#4A90D9',                                   // fichier à venir
@@ -1282,19 +1282,42 @@ function tooltipFn(c){ return (f,l)=>{
   l.bindTooltip(name,{sticky:true,offset:[8,0]});
 };}
 
-// Injection du pattern SVG hachure dans le renderer Leaflet
+// Injection des patterns SVG dans le renderer Leaflet
+// Appelée au chargement + à chaque layeradd/moveend pour survivre aux re-renders
 function injectSVGPatterns(){
   const svgEl=document.querySelector('#map .leaflet-overlay-pane svg');
-  if(!svgEl||svgEl.querySelector('#hachure-agri'))return;
+  if(!svgEl)return;
   let defs=svgEl.querySelector('defs');
   if(!defs){defs=document.createElementNS('http://www.w3.org/2000/svg','defs');svgEl.insertBefore(defs,svgEl.firstChild);}
-  const pat=document.createElementNS('http://www.w3.org/2000/svg','pattern');
-  pat.setAttribute('id','hachure-agri'); pat.setAttribute('patternUnits','userSpaceOnUse');
-  pat.setAttribute('width','10'); pat.setAttribute('height','6');
-  const ln=document.createElementNS('http://www.w3.org/2000/svg','line');
-  ln.setAttribute('x1','0'); ln.setAttribute('y1','3'); ln.setAttribute('x2','10'); ln.setAttribute('y2','3');
-  ln.setAttribute('stroke','#C8B84A'); ln.setAttribute('stroke-width','1'); ln.setAttribute('opacity','0.75');
-  pat.appendChild(ln); defs.appendChild(pat);
+
+  // ── Hachure horizontale — Terres agricoles ──────────────────────────────
+  if(!defs.querySelector('#hachure-agri')){
+    const pat=document.createElementNS('http://www.w3.org/2000/svg','pattern');
+    pat.setAttribute('id','hachure-agri');
+    pat.setAttribute('patternUnits','userSpaceOnUse');
+    pat.setAttribute('width','12'); pat.setAttribute('height','8');
+    const ln=document.createElementNS('http://www.w3.org/2000/svg','line');
+    ln.setAttribute('x1','0'); ln.setAttribute('y1','4');
+    ln.setAttribute('x2','12'); ln.setAttribute('y2','4');
+    ln.setAttribute('stroke','#C8B84A'); ln.setAttribute('stroke-width','1.5');
+    ln.setAttribute('opacity','0.7');
+    pat.appendChild(ln); defs.appendChild(pat);
+  }
+
+  // ── Stippling points — Forêts ────────────────────────────────────────────
+  if(!defs.querySelector('#stipple-foret')){
+    const pat=document.createElementNS('http://www.w3.org/2000/svg','pattern');
+    pat.setAttribute('id','stipple-foret');
+    pat.setAttribute('patternUnits','userSpaceOnUse');
+    pat.setAttribute('width','14'); pat.setAttribute('height','14');
+    [[3,3],[10,8],[7,12],[1,9],[12,3],[5,7]].forEach(([cx,cy])=>{
+      const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      c.setAttribute('cx',cx); c.setAttribute('cy',cy); c.setAttribute('r','1.2');
+      c.setAttribute('fill','#3D6B4F'); c.setAttribute('opacity','0.65');
+      pat.appendChild(c);
+    });
+    defs.appendChild(pat);
+  }
 }
 
 // Filtre d'opacité + interactivité sur les types de médias (panneau gauche)
@@ -1439,10 +1462,10 @@ function initMap(){
   if(mapInitialized)return;
   mapInitialized=true;
 
-  const bounds=L.latLngBounds(L.latLng(45.095,4.260),L.latLng(45.140,4.325));
+  const bounds=L.latLngBounds(L.latLng(45.090,4.195),L.latLng(45.195,4.345));
   map=L.map('map',{
-    center:[45.118,4.292],zoom:14,minZoom:13,maxZoom:17,
-    maxBounds:bounds,maxBoundsViscosity:1,
+    center:[45.140,4.292],zoom:13,minZoom:12,maxZoom:17,
+    maxBounds:bounds,maxBoundsViscosity:0.7,
     zoomControl:true,attributionControl:false
   });
   tileLayer=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).addTo(map);
@@ -1450,8 +1473,15 @@ function initMap(){
 
   // Créer les couches GeoJSON vides + injecter les données déjà reçues (pendingData)
   LAYERS.forEach(c=>{
-    const s=c.lstyle||{color:c.color,weight:1,stroke:true,fillColor:c.color,fillOpacity:.35};
-    const layer=L.geoJSON(null,{style:s,onEachFeature:tooltipFn(c)});
+    let styleArg;
+    if(c.special==='hachure'){
+      styleArg=()=>({weight:0,stroke:false,fillColor:'url(#hachure-agri)',fillOpacity:1});
+    } else if(c.special==='stipple'){
+      styleArg=()=>({weight:0,stroke:false,fillColor:'url(#stipple-foret)',fillOpacity:1});
+    } else {
+      styleArg=c.lstyle||{weight:0,stroke:false,fillColor:c.color,fillOpacity:.35};
+    }
+    const layer=L.geoJSON(null,{style:styleArg,onEachFeature:tooltipFn(c)});
     lobj[c.id]=layer;
     layerVisible[c.id] = c.on !== false;
     // Injecter les données déjà arrivées avant l'init de la carte
@@ -1471,7 +1501,7 @@ function initMap(){
   // Liste UI des couches dans le panneau gauche
   const llst=document.getElementById('llist');
   LAYERS.forEach(c=>{
-    const missing=!c.file&&c.special!=='hachure';
+    const missing=!c.file&&!c.special;
     const el=document.createElement('div');
     el.className='li'+(layerVisible[c.id]?' on':'');
     el.dataset.layerId=c.id;
