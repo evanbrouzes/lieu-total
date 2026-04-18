@@ -772,7 +772,8 @@ body.admin-open #eye-btn-fixed { right: calc(320px + var(--gap) + 12px); }
 
   /* ── Pages secondaires ───────────────────────────────────────────────────── */
   .pg-hero { padding:64px 24px 32px; min-height:35vh; }
-  .pg-title { font-size:clamp(36px,10vw,72px); }
+  /* Même taille que .pg-body h2 (Festival, Maison, Hameau) = var(--fs-lg) */
+  .pg-title { font-size:var(--fs-lg); }
   /* Pratiques : hero centré plein écran sur mobile — identique à Festival/Maison/Hameau.
      - display:flex + align/justify center → titre centré dans le viewport
      - opacity:1 + transform:none → annule le wave-block (démarre invisible sinon)
@@ -787,7 +788,7 @@ body.admin-open #eye-btn-fixed { right: calc(320px + var(--gap) + 12px); }
     transform:none !important;
   }
   #page-pratiques .pg-title {
-    font-size:clamp(36px,10vw,72px);
+    font-size:var(--fs-lg); /* identique à .pg-body h2 (Festival etc.) */
     text-align:center;
     opacity:1 !important;
     transform:none !important;
