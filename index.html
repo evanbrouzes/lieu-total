@@ -604,28 +604,106 @@ body.admin-open #eye-btn-fixed { right: calc(320px + var(--gap) + 12px); }
   #cursor { display:none !important; }
 }
 
+/* ── Gradient top : lisibilité logo sur toutes les pages ───────────────── */
+#top-gradient {
+  display:none; /* activé uniquement sur mobile via media query */
+  position:fixed; top:0; left:0; right:0;
+  height:80px; pointer-events:none;
+  background:linear-gradient(to bottom, rgba(255,255,255,0.88) 0%, transparent 100%);
+  z-index:1990; /* sous logo (2000), au-dessus de tout le reste */
+}
+
+/* ── Burger button — caché sur desktop ────────────────────────────────── */
+#burger-btn {
+  display:none;
+  position:fixed; top:16px; right:16px; z-index:2100;
+  width:44px; height:44px; border-radius:100px;
+  align-items:center; justify-content:center;
+  background:var(--glass-bg);
+  backdrop-filter:blur(24px) saturate(180%);
+  -webkit-backdrop-filter:blur(24px) saturate(180%);
+  border:1px solid var(--glass-border);
+  box-shadow:var(--glass-shadow);
+  cursor:pointer; transition:background .15s;
+}
+#burger-btn:active { background:rgba(0,0,0,.07); }
+
+/* ── Menu burger plein écran — caché sur desktop ──────────────────────── */
+#burger-menu {
+  display:none;
+  position:fixed; inset:0; z-index:5000;
+  background:rgba(255,255,255,0.92);
+  backdrop-filter:blur(24px) saturate(180%);
+  -webkit-backdrop-filter:blur(24px) saturate(180%);
+  flex-direction:column; align-items:center; justify-content:center;
+}
+#burger-menu.open { display:flex; }
+#burger-close {
+  position:absolute; top:20px; right:16px;
+  width:44px; height:44px; border-radius:100px;
+  background:none; border:none; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+}
+#burger-close:active { background:rgba(0,0,0,.06); }
+.bm-nav { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.bm-link {
+  font-family:var(--f); font-size:clamp(36px,10vw,56px);
+  font-weight:700; letter-spacing:-.04em; line-height:1;
+  background:none; border:none; color:var(--ink2); cursor:pointer;
+  padding:10px 24px; border-radius:100px;
+  transition:color .15s, background .15s;
+}
+.bm-link:active { color:var(--ink); background:rgba(0,0,0,.05); }
+.bm-link.active { color:var(--ink); }
+
 /* === MOBILE (≤768px) === */
 @media(max-width:768px){
 
-  /* ── Tap bar ─────────────────────────────────────────────────────────────── */
-  #nav-float {
-    bottom:16px; padding:4px 5px; gap:0;
-    max-width:calc(100vw - 32px); /* jamais plus large que l'écran */
-  }
-  .npill { padding:8px 10px; font-size:var(--fs-sm); gap:4px; min-height:44px; }
-  .icon-slot, .nav-icon { display:none; } /* masquer icônes si besoin de place */
-  #logo { top:16px; left:16px; }
+  /* ── Gradient top activé ─────────────────────────────────────────────────── */
+  #top-gradient { display:block; }
+
+  /* ── Logo ────────────────────────────────────────────────────────────────── */
+  #logo { top:16px; left:16px; z-index:2000; }
   #logo-wordmark { font-size:15px; }
+  /* Logo masqué quand burger ouvert */
+  body.burger-open #logo { opacity:0; pointer-events:none; }
 
-  /* ── Bouton Admin ────────────────────────────────────────────────────────── */
-  #btn-admin { padding:10px 14px; font-size:var(--fs-sm); right:16px; top:16px; min-height:44px; }
+  /* ── Tap bar : icônes uniquement ─────────────────────────────────────────── */
+  #nav-float {
+    bottom:16px; padding:4px 6px; gap:2px;
+    max-width:calc(100vw - 32px);
+  }
+  .npill { padding:10px 12px; gap:0; min-height:44px; min-width:44px; }
+  .npill-label { display:none; } /* masquer texte, garder icône */
+  .nav-icon { display:block; width:20px; height:20px; }
+  .icon-slot { display:none; }
 
-  /* ── Panneau calques/médias : masqué par défaut, toggle via bouton ─────── */
+  /* ── Bouton Admin : masqué sur mobile ───────────────────────────────────── */
+  #btn-admin { display:none !important; }
+
+  /* ── Burger button : visible sur mobile ─────────────────────────────────── */
+  #burger-btn { display:flex; }
+  /* Décalé à gauche quand bouton œil visible (page Carte) */
+  body.carte-active #burger-btn { right:calc(16px + 44px + 8px); }
+  /* Masqué quand menu ouvert */
+  body.burger-open #burger-btn { display:none; }
+
+  /* ── Bouton œil : haut droite sur mobile, visible seulement sur Carte ────── */
+  #eye-btn-fixed {
+    top:16px; right:16px; bottom:auto;
+    width:44px; height:44px;
+  }
+  /* Masqué quand burger ouvert */
+  body.burger-open #eye-btn-fixed { display:none !important; }
+
+  /* ── Zoom Leaflet : masqué sur mobile (pinch natif) ─────────────────────── */
+  .leaflet-control-zoom { display:none !important; }
+
+  /* ── Panneau calques : slide-in depuis la gauche ─────────────────────────── */
   #layers-panel {
     position:fixed;
     top:0; left:0; bottom:0;
-    width:min(280px, 85vw);
-    max-height:100vh;
+    width:min(280px,85vw); max-height:100vh;
     border-radius:0 20px 20px 0;
     z-index:1500;
     transform:translateX(-100%);
@@ -634,53 +712,43 @@ body.admin-open #eye-btn-fixed { right: calc(320px + var(--gap) + 12px); }
   }
   #layers-panel.mob-open { transform:translateX(0); }
 
-  /* Overlay sombre derrière le panneau ouvert */
+  /* Overlay sombre derrière panneau calques */
   #layers-overlay {
-    display:none;
-    position:fixed; inset:0; z-index:1400;
+    display:none; position:fixed; inset:0; z-index:1400;
     background:rgba(0,0,0,.32);
   }
   #layers-overlay.on { display:block; }
 
-  /* Bouton toggle panneau calques — bas gauche */
-  #layers-toggle-btn {
+  /* Bouton toggle calques — bas gauche, visible sur Carte uniquement */
+  #layers-toggle-btn { display:none; }
+  body.carte-active #layers-toggle-btn {
     display:flex;
     position:fixed; bottom:calc(var(--nav-outer-h) + var(--gap) + 12px); left:16px;
-    z-index:1300;
-    width:44px; height:44px;
-    border-radius:100px;
+    z-index:1300; width:44px; height:44px; border-radius:100px;
     align-items:center; justify-content:center;
-    background:var(--glass-bg);
-    backdrop-filter:blur(20px);
+    background:var(--glass-bg); backdrop-filter:blur(20px);
     -webkit-backdrop-filter:blur(20px);
-    border:1px solid var(--glass-border);
-    box-shadow:var(--glass-shadow);
-    cursor:pointer;
+    border:1px solid var(--glass-border); box-shadow:var(--glass-shadow); cursor:pointer;
   }
   #layers-toggle-btn svg { width:18px; height:18px; }
   #layers-toggle-btn:active { background:rgba(0,0,0,.08); }
 
-  /* ── Admin panel : bottom sheet pleine largeur ───────────────────────────── */
-  #admin-panel {
-    width:100%; right:0; left:0;
-    top:auto;
-    bottom:0;
-    max-height:82vh;
-    border-radius:20px 20px 0 0;
-    transform-origin:bottom center;
-    transform:translateY(100%);
-    transition:transform .28s cubic-bezier(.4,0,.2,1), opacity .22s ease;
+  /* ── Admin panel : masqué sur mobile ────────────────────────────────────── */
+  #admin-panel { display:none !important; }
+
+  /* ── Lightbox : centrée sur mobile ──────────────────────────────────────── */
+  #lightbox { align-items:center; justify-content:center; }
+  #lb-box {
+    position:fixed;
+    top:50%; left:50%;
+    width:92vw; max-width:92vw; max-height:85vh;
+    border-radius:16px;
+    transform:translate(-50%,-50%) scale(.94);
     opacity:0;
   }
-  #admin-panel.open { transform:translateY(0); opacity:1; }
-
-  /* ── Lightbox ────────────────────────────────────────────────────────────── */
-  #lb-box { width:100vw; max-width:100vw; border-radius:16px 16px 0 0; margin-top:auto; }
-  #lightbox { align-items:flex-end; }
-
-  /* ── Bouton œil + zoom : zones touch min 44px ───────────────────────────── */
-  #eye-btn-fixed { width:44px; height:44px; }
-  .leaflet-control-zoom a { width:44px!important; height:44px!important; line-height:44px!important; }
+  #lightbox.open #lb-box { transform:translate(-50%,-50%) scale(1); opacity:1; }
+  /* Croix fermer bien visible et grande sur mobile */
+  #lb-close { width:44px; height:44px; font-size:22px; top:10px; right:10px; }
 
   /* ── Pages secondaires ───────────────────────────────────────────────────── */
   .pg-hero { padding:64px 24px 32px; min-height:35vh; }
@@ -690,27 +758,27 @@ body.admin-open #eye-btn-fixed { right: calc(320px + var(--gap) + 12px); }
   .prat-list li { font-size:14px; }
   .prat-sec { margin-bottom:40px; }
 
-  /* Effet vague : transitions allégées sur mobile */
+  /* Effet vague allégé sur mobile */
   .wave-block { transition:opacity .3s ease, transform .3s ease; }
 
-  /* ── Flèche Pratiques : taille réduite ──────────────────────────────────── */
-  #pratiques-arrow { width:240px; }
+  /* ── Flèche Pratiques : centrée, réduite ────────────────────────────────── */
+  #pratiques-arrow { width:240px; left:50%; }
 
-  /* ── États active à la place des hover ──────────────────────────────────── */
-  .npill:hover { color:var(--ink2); transform:none; } /* désactiver hover desktop */
-  .npill:active { transform:scale(0.90) !important; }
+  /* ── États :active à la place des :hover ────────────────────────────────── */
+  .npill:hover { color:var(--ink2); transform:none; }
+  .npill:not(.active):active { transform:scale(0.88) !important; background:rgba(0,0,0,.06); }
   .li:active { background:rgba(0,0,0,.05); }
   .lp-tab:hover { color:var(--ink2); }
   .lp-tab:active { background:rgba(0,0,0,.06); color:var(--ink); }
-  #btn-admin:hover { background:var(--glass-bg); color:var(--ink); border-color:var(--glass-border); box-shadow:var(--glass-shadow); }
-  #btn-admin:active { background:var(--ink); color:#fff; }
 
   /* ── Inputs : min 16px pour éviter zoom iOS ─────────────────────────────── */
   input, textarea, select { font-size:16px !important; }
 
-  /* Cacher toggle btn quand pas sur la carte */
-  #layers-toggle-btn { display:none; }
-  body.carte-active #layers-toggle-btn { display:flex; }
+  /* ── Splash ──────────────────────────────────────────────────────────────── */
+  #splash-pw-wrap { width:calc(100vw - 48px); }
+  #splash-pw { font-size:16px; }
+  #splash-btn { min-height:44px; }
+  #splash-logo-group img { width:56px; height:56px; }
 }
 </style>
 </head>
@@ -743,14 +811,43 @@ body.admin-open #eye-btn-fixed { right: calc(320px + var(--gap) + 12px); }
 
 <!-- NAV GLASS -->
 <nav id="nav-float">
-  <button class="npill active" data-page="pratiques"><svg class="nav-icon" viewBox="0 0 640 640" fill="currentColor" aria-hidden="true"><path d="M320.002,105.415l254.534,440.963H65.464L320.002,105.415M320,369.992c24.353,0,44.095-19.743,44.095-44.097s-19.743-44.097-44.095-44.097-44.095,19.743-44.095,44.097,19.74,44.097,44.095,44.097M320.002,40.454c-23.21,0-44.657,12.384-56.26,32.485L9.204,513.902c-11.602,20.099-11.6,44.861.004,64.958,11.604,20.097,33.049,32.478,56.256,32.478h509.072c23.207,0,44.652-12.381,56.256-32.478,11.604-20.097,11.606-44.859.005-64.957L376.263,72.94c-11.603-20.102-33.05-32.486-56.26-32.486h0Z"/></svg>Pratiques</button>
-  <button class="npill" data-page="carte"><svg class="nav-icon" viewBox="0 0 640 640" fill="currentColor" aria-hidden="true"><path d="M540.19,105.415v440.963H99.228V105.415h440.962M319.71,369.992c24.353,0,44.095-19.742,44.095-44.096s-19.743-44.097-44.095-44.097-44.095,19.743-44.095,44.097,19.741,44.096,44.095,44.096M540.19,40.454H99.228c-35.877,0-64.961,29.084-64.961,64.961v440.963c0,35.877,29.084,64.961,64.961,64.961h440.962c35.877,0,64.961-29.084,64.961-64.961V105.415c0-35.877-29.084-64.961-64.961-64.961h0Z"/></svg>Carte</button>
-  <button class="npill" data-page="festival"><svg class="nav-icon" viewBox="0 0 640 640" fill="currentColor" aria-hidden="true"><path d="M320.001,105.415c121.769,0,220.48,98.712,220.48,220.481s-98.711,220.481-220.48,220.481-220.483-98.712-220.483-220.481,98.714-220.481,220.483-220.481M320,502.282c24.354,0,44.096-19.744,44.096-44.096s-19.742-44.096-44.096-44.096-44.096,19.741-44.096,44.096,19.742,44.096,44.096,44.096M320.001,40.454c-38.506,0-75.895,7.556-111.127,22.458-33.998,14.38-64.518,34.952-90.711,61.146-26.194,26.194-46.766,56.713-61.147,90.711-14.902,35.233-22.458,72.621-22.458,111.127s7.556,75.894,22.458,111.127c14.38,33.998,34.953,64.517,61.147,90.711,26.194,26.194,56.714,46.766,90.711,61.146,35.233,14.902,72.622,22.458,111.127,22.458s75.894-7.556,111.127-22.458c33.998-14.38,64.517-34.952,90.711-61.146,26.194-26.194,46.766-56.713,61.145-90.711,14.902-35.233,22.458-72.621,22.458-111.127s-7.556-75.894-22.458-111.127c-14.379-33.998-34.952-64.517-61.145-90.711-26.193-26.194-56.713-46.766-90.711-61.146-35.233-14.902-72.621-22.458-111.127-22.458h0Z"/></svg>Festival</button>
-  <button class="npill" data-page="maison"><svg class="nav-icon" viewBox="0 0 640 640" fill="currentColor" aria-hidden="true"><path d="M320.001,105.415c121.769,0,220.48,98.712,220.48,220.481s-98.711,220.481-220.48,220.481-220.483-98.712-220.483-220.481,98.714-220.481,220.483-220.481M320,369.992c24.354,0,44.096-19.744,44.096-44.096s-19.743-44.096-44.096-44.096-44.096,19.741-44.096,44.096,19.742,44.096,44.096,44.096M320,502.282c24.354,0,44.096-19.744,44.096-44.096s-19.743-44.096-44.096-44.096-44.096,19.741-44.096,44.096,19.742,44.096,44.096,44.096M320.001,40.454c-38.506,0-75.895,7.556-111.127,22.458-33.998,14.38-64.518,34.952-90.711,61.146-26.194,26.194-46.766,56.713-61.147,90.711-14.902,35.233-22.458,72.621-22.458,111.127s7.556,75.894,22.458,111.127c14.38,33.998,34.953,64.517,61.147,90.711,26.194,26.194,56.714,46.766,90.711,61.146,35.233,14.902,72.622,22.458,111.127,22.458s75.894-7.556,111.127-22.458c33.998-14.38,64.517-34.952,90.711-61.146,26.194-26.194,46.766-56.713,61.145-90.711,14.902-35.233,22.458-72.621,22.458-111.127s-7.556-75.894-22.458-111.127c-14.379-33.998-34.952-64.517-61.145-90.711-26.193-26.194-56.713-46.766-90.711-61.146-35.233-14.902-72.621-22.458-111.127-22.458h0Z"/></svg>Maison</button>
-  <button class="npill" data-page="hameau"><svg class="nav-icon" viewBox="0 0 640 640" fill="currentColor" aria-hidden="true"><path d="M319.998,105.415c121.77,0,220.483,98.712,220.483,220.481s-98.714,220.481-220.483,220.481-220.48-98.712-220.48-220.481,98.711-220.481,220.48-220.481M320,237.702c24.354,0,44.097-19.741,44.097-44.096s-19.743-44.095-44.097-44.095-44.096,19.743-44.096,44.095,19.743,44.096,44.096,44.096M320,369.992c24.354,0,44.097-19.741,44.097-44.096s-19.743-44.096-44.097-44.096-44.096,19.744-44.096,44.096,19.743,44.096,44.096,44.096M320,502.282c24.354,0,44.097-19.741,44.097-44.096s-19.743-44.096-44.097-44.096-44.096,19.744-44.096,44.096,19.743,44.096,44.096,44.096M319.998,40.454c-38.506,0-75.894,7.556-111.127,22.458-33.997,14.38-64.517,34.952-90.71,61.146-26.194,26.194-46.766,56.713-61.146,90.711-14.902,35.233-22.458,72.621-22.458,111.127s7.555,75.894,22.458,111.127c14.38,33.998,34.952,64.517,61.146,90.711,26.193,26.194,56.713,46.766,90.71,61.146,35.233,14.902,72.621,22.458,111.127,22.458s75.895-7.556,111.127-22.458c33.998-14.38,64.518-34.952,90.712-61.146,26.194-26.194,46.767-56.713,61.147-90.711,14.902-35.233,22.459-72.621,22.459-111.127s-7.556-75.894-22.459-111.127c-14.38-33.998-34.952-64.517-61.147-90.711-26.194-26.194-56.714-46.766-90.712-61.146-35.232-14.902-72.621-22.458-111.127-22.458h0Z"/></svg>Hameau</button>
+  <button class="npill active" data-page="pratiques"><svg class="nav-icon" viewBox="0 0 640 640" fill="currentColor" aria-hidden="true"><path d="M320.002,105.415l254.534,440.963H65.464L320.002,105.415M320,369.992c24.353,0,44.095-19.743,44.095-44.097s-19.743-44.097-44.095-44.097-44.095,19.743-44.095,44.097,19.74,44.097,44.095,44.097M320.002,40.454c-23.21,0-44.657,12.384-56.26,32.485L9.204,513.902c-11.602,20.099-11.6,44.861.004,64.958,11.604,20.097,33.049,32.478,56.256,32.478h509.072c23.207,0,44.652-12.381,56.256-32.478,11.604-20.097,11.606-44.859.005-64.957L376.263,72.94c-11.603-20.102-33.05-32.486-56.26-32.486h0Z"/></svg><span class="npill-label">Pratiques</span></button>
+  <button class="npill" data-page="carte"><svg class="nav-icon" viewBox="0 0 640 640" fill="currentColor" aria-hidden="true"><path d="M540.19,105.415v440.963H99.228V105.415h440.962M319.71,369.992c24.353,0,44.095-19.742,44.095-44.096s-19.743-44.097-44.095-44.097-44.095,19.743-44.095,44.097,19.741,44.096,44.095,44.096M540.19,40.454H99.228c-35.877,0-64.961,29.084-64.961,64.961v440.963c0,35.877,29.084,64.961,64.961,64.961h440.962c35.877,0,64.961-29.084,64.961-64.961V105.415c0-35.877-29.084-64.961-64.961-64.961h0Z"/></svg><span class="npill-label">Carte</span></button>
+  <button class="npill" data-page="festival"><svg class="nav-icon" viewBox="0 0 640 640" fill="currentColor" aria-hidden="true"><path d="M320.001,105.415c121.769,0,220.48,98.712,220.48,220.481s-98.711,220.481-220.48,220.481-220.483-98.712-220.483-220.481,98.714-220.481,220.483-220.481M320,502.282c24.354,0,44.096-19.744,44.096-44.096s-19.742-44.096-44.096-44.096-44.096,19.741-44.096,44.096,19.742,44.096,44.096,44.096M320.001,40.454c-38.506,0-75.895,7.556-111.127,22.458-33.998,14.38-64.518,34.952-90.711,61.146-26.194,26.194-46.766,56.713-61.147,90.711-14.902,35.233-22.458,72.621-22.458,111.127s7.556,75.894,22.458,111.127c14.38,33.998,34.953,64.517,61.147,90.711,26.194,26.194,56.714,46.766,90.711,61.146,35.233,14.902,72.622,22.458,111.127,22.458s75.894-7.556,111.127-22.458c33.998-14.38,64.517-34.952,90.711-61.146,26.194-26.194,46.766-56.713,61.145-90.711,14.902-35.233,22.458-72.621,22.458-111.127s-7.556-75.894-22.458-111.127c-14.379-33.998-34.952-64.517-61.145-90.711-26.193-26.194-56.713-46.766-90.711-61.146-35.233-14.902-72.621-22.458-111.127-22.458h0Z"/></svg><span class="npill-label">Festival</span></button>
+  <button class="npill" data-page="maison"><svg class="nav-icon" viewBox="0 0 640 640" fill="currentColor" aria-hidden="true"><path d="M320.001,105.415c121.769,0,220.48,98.712,220.48,220.481s-98.711,220.481-220.48,220.481-220.483-98.712-220.483-220.481,98.714-220.481,220.483-220.481M320,369.992c24.354,0,44.096-19.744,44.096-44.096s-19.743-44.096-44.096-44.096-44.096,19.741-44.096,44.096,19.742,44.096,44.096,44.096M320,502.282c24.354,0,44.096-19.744,44.096-44.096s-19.743-44.096-44.096-44.096-44.096,19.741-44.096,44.096,19.742,44.096,44.096,44.096M320.001,40.454c-38.506,0-75.895,7.556-111.127,22.458-33.998,14.38-64.518,34.952-90.711,61.146-26.194,26.194-46.766,56.713-61.147,90.711-14.902,35.233-22.458,72.621-22.458,111.127s7.556,75.894,22.458,111.127c14.38,33.998,34.953,64.517,61.147,90.711,26.194,26.194,56.714,46.766,90.711,61.146,35.233,14.902,72.622,22.458,111.127,22.458s75.894-7.556,111.127-22.458c33.998-14.38,64.517-34.952,90.711-61.146,26.194-26.194,46.766-56.713,61.145-90.711,14.902-35.233,22.458-72.621,22.458-111.127s-7.556-75.894-22.458-111.127c-14.379-33.998-34.952-64.517-61.145-90.711-26.193-26.194-56.713-46.766-90.711-61.146-35.233-14.902-72.621-22.458-111.127-22.458h0Z"/></svg><span class="npill-label">Maison</span></button>
+  <button class="npill" data-page="hameau"><svg class="nav-icon" viewBox="0 0 640 640" fill="currentColor" aria-hidden="true"><path d="M319.998,105.415c121.77,0,220.483,98.712,220.483,220.481s-98.714,220.481-220.483,220.481-220.48-98.712-220.48-220.481,98.711-220.481,220.48-220.481M320,237.702c24.354,0,44.097-19.741,44.097-44.096s-19.743-44.095-44.097-44.095-44.096,19.743-44.096,44.095,19.743,44.096,44.096,44.096M320,369.992c24.354,0,44.097-19.741,44.097-44.096s-19.743-44.096-44.097-44.096-44.096,19.744-44.096,44.096,19.743,44.096,44.096,44.096M320,502.282c24.354,0,44.097-19.741,44.097-44.096s-19.743-44.096-44.097-44.096-44.096,19.744-44.096,44.096,19.743,44.096,44.096,44.096M319.998,40.454c-38.506,0-75.894,7.556-111.127,22.458-33.997,14.38-64.517,34.952-90.71,61.146-26.194,26.194-46.766,56.713-61.146,90.711-14.902,35.233-22.458,72.621-22.458,111.127s7.555,75.894,22.458,111.127c14.38,33.998,34.952,64.517,61.146,90.711,26.193,26.194,56.713,46.766,90.71,61.146,35.233,14.902,72.621,22.458,111.127,22.458s75.895-7.556,111.127-22.458c33.998-14.38,64.518-34.952,90.712-61.146,26.194-26.194,46.767-56.713,61.147-90.711,14.902-35.233,22.459-72.621,22.459-111.127s-7.556-75.894-22.459-111.127c-14.38-33.998-34.952-64.517-61.147-90.711-26.194-26.194-56.714-46.766-90.712-61.146-35.232-14.902-72.621-22.458-111.127-22.458h0Z"/></svg><span class="npill-label">Hameau</span></button>
 </nav>
 
 <button id="btn-admin">+ Média</button>
+
+<!-- Burger mobile — remplace btn-admin sur mobile, toujours présent dans le DOM -->
+<button id="burger-btn" aria-label="Menu" aria-expanded="false">
+  <svg width="20" height="14" viewBox="0 0 20 14" fill="none" stroke="#111" stroke-width="1.8" stroke-linecap="round">
+    <line x1="0" y1="1" x2="20" y2="1"/>
+    <line x1="0" y1="7" x2="20" y2="7"/>
+    <line x1="0" y1="13" x2="20" y2="13"/>
+  </svg>
+</button>
+
+<!-- Menu burger plein écran (mobile uniquement) -->
+<div id="burger-menu" aria-hidden="true">
+  <button id="burger-close" aria-label="Fermer le menu">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round">
+      <line x1="1" y1="1" x2="17" y2="17"/>
+      <line x1="17" y1="1" x2="1" y2="17"/>
+    </svg>
+  </button>
+  <nav class="bm-nav">
+    <button class="bm-link" data-page="pratiques">Pratiques</button>
+    <button class="bm-link" data-page="carte">Carte</button>
+    <button class="bm-link" data-page="festival">Festival</button>
+    <button class="bm-link" data-page="maison">Maison</button>
+    <button class="bm-link" data-page="hameau">Hameau</button>
+  </nav>
+</div>
+
+<!-- Gradient permanent sous le logo — lisibilité sur toutes les pages -->
+<div id="top-gradient"></div>
 
 <!-- PAGES -->
 <div class="page active" id="page-pratiques">
@@ -1513,6 +1610,23 @@ function createMk(pt){
     m.on('mouseout',function(){const self=this;setTimeout(()=>{if(open){self.closePopup();open=false;}},280);});
   }
   m.on('click',function(){if(pt.type!=='mounas')openLB(pt);});
+  // Mobile : tap sur la popup ouvre la lightbox (non-mounas) ou active le lien (mounas)
+  m.on('popupopen',function(){
+    const popEl=this.getPopup()&&this.getPopup().getElement();
+    if(!popEl) return;
+    if(pt.type!=='mounas'){
+      const handler=function(e){ e.stopPropagation(); openLB(pt); };
+      popEl._lbHandler=handler;
+      popEl.addEventListener('click',handler);
+    }
+  });
+  m.on('popupclose',function(){
+    const popEl=this.getPopup()&&this.getPopup().getElement();
+    if(popEl&&popEl._lbHandler){
+      popEl.removeEventListener('click',popEl._lbHandler);
+      delete popEl._lbHandler;
+    }
+  });
   m.addTo(map);
   mkrs[pt.id]=m;
 }
@@ -1822,6 +1936,42 @@ function closeLayers(){
 }
 document.getElementById('layers-toggle-btn').addEventListener('click', openLayers);
 document.getElementById('layers-overlay').addEventListener('click', closeLayers);
+
+// ── Menu burger mobile ─────────────────────────────────────────────────────
+(function(){
+  const burgerBtn  = document.getElementById('burger-btn');
+  const burgerMenu = document.getElementById('burger-menu');
+  const burgerClose= document.getElementById('burger-close');
+
+  function openBurger(){
+    burgerMenu.classList.add('open');
+    burgerMenu.setAttribute('aria-hidden','false');
+    burgerBtn.setAttribute('aria-expanded','true');
+    document.body.classList.add('burger-open');
+    // Sync active state sur les liens du menu
+    const curPage = document.querySelector('.npill.active')?.dataset.page;
+    document.querySelectorAll('.bm-link').forEach(l=>{
+      l.classList.toggle('active', l.dataset.page === curPage);
+    });
+  }
+  function closeBurger(){
+    burgerMenu.classList.remove('open');
+    burgerMenu.setAttribute('aria-hidden','true');
+    burgerBtn.setAttribute('aria-expanded','false');
+    document.body.classList.remove('burger-open');
+  }
+
+  burgerBtn.addEventListener('click', openBurger);
+  burgerClose.addEventListener('click', closeBurger);
+
+  // Liens du menu → naviguer + fermer
+  document.querySelectorAll('.bm-link').forEach(l=>{
+    l.addEventListener('click',()=>{
+      navTo(l.dataset.page);
+      closeBurger();
+    });
+  });
+})();
 
 // ─── ADMIN ────────────────────────────────────────────────────────────────────
 const ap=document.getElementById('admin-panel');
