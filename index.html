@@ -612,6 +612,14 @@ body.admin-open #eye-btn-fixed { right: calc(320px + var(--gap) + 12px); }
   background:linear-gradient(to bottom, rgba(255,255,255,0.88) 0%, transparent 100%);
   z-index:1990; /* sous logo (2000), au-dessus de tout le reste */
 }
+/* ── Gradient bas : lisibilité nav bar sur toutes les pages ─────────────── */
+#bottom-gradient {
+  display:none; /* activé uniquement sur mobile via media query */
+  position:fixed; bottom:0; left:0; right:0;
+  height:calc(var(--nav-outer-h) + var(--gap) + 24px); pointer-events:none;
+  background:linear-gradient(to top, rgba(255,255,255,0.92) 0%, transparent 100%);
+  z-index:1990;
+}
 
 /* ── Burger button — caché sur desktop ────────────────────────────────── */
 #burger-btn {
@@ -659,12 +667,13 @@ body.admin-open #eye-btn-fixed { right: calc(320px + var(--gap) + 12px); }
 /* === MOBILE (≤768px) === */
 @media(max-width:768px){
 
-  /* ── Gradient top activé — hauteur augmentée pour couvrir logo + wordmark ── */
+  /* ── Gradients haut et bas activés sur mobile ───────────────────────────── */
   #top-gradient {
     display:block;
     height:100px;
     background:linear-gradient(to bottom, rgba(255,255,255,0.92) 0%, transparent 100%);
   }
+  #bottom-gradient { display:block; }
 
   /* ── Logo ────────────────────────────────────────────────────────────────── */
   #logo { top:16px; left:16px; z-index:2000; }
@@ -692,8 +701,9 @@ body.admin-open #eye-btn-fixed { right: calc(320px + var(--gap) + 12px); }
      Bouton height:44px → top = 34 - 22 = 12px pour aligner les centres
      z-index 2100 pour passer devant le gradient (1990) et le fond de carte
   ────────────────────────────────────────────────────────────────────────── */
+  /* Œil décalé à gauche du burger (burger à l'angle, plus accessible) */
   #eye-btn-fixed {
-    top:12px; right:16px; bottom:auto;
+    top:12px; right:calc(16px + 44px + 8px); bottom:auto;
     width:44px; height:44px;
     z-index:2100;
   }
@@ -732,7 +742,7 @@ body.admin-open #eye-btn-fixed { right: calc(320px + var(--gap) + 12px); }
   body.carte-active #layers-toggle-btn {
     display:flex;
     position:fixed;
-    top:12px; right:calc(16px + 44px + 8px); bottom:auto; left:auto;
+    top:12px; right:16px; bottom:auto; left:auto;
     z-index:2100; width:44px; height:44px; border-radius:100px;
     align-items:center; justify-content:center;
     background:var(--glass-bg);
@@ -763,12 +773,15 @@ body.admin-open #eye-btn-fixed { right: calc(320px + var(--gap) + 12px); }
   /* ── Pages secondaires ───────────────────────────────────────────────────── */
   .pg-hero { padding:64px 24px 32px; min-height:35vh; }
   .pg-title { font-size:clamp(36px,10vw,72px); }
-  /* Pratiques : hero plein écran sur mobile — même position de titre que les autres
-     pages (top-left, padding identique) mais 100vh pour cacher le contenu sous le fold */
+  /* Pratiques : hero plein écran sur mobile.
+     display:block supprime tout héritage flex du desktop (justify-content:center etc.)
+     Le titre se place naturellement en haut à gauche comme sur Hameau/Maison */
   #page-pratiques .pg-hero {
-    min-height:100vh; align-items:flex-start; justify-content:flex-start; padding:64px 24px 32px;
+    display:block !important;
+    min-height:100vh !important;
+    padding:64px 24px 32px !important;
   }
-  #page-pratiques .pg-title { font-size:clamp(36px,10vw,72px); }
+  #page-pratiques .pg-title { font-size:clamp(36px,10vw,72px); text-align:left; }
   .pg-content { padding:0 24px 64px; }
   .prat-h { font-size:clamp(22px,6vw,32px); margin-bottom:16px; }
   .prat-list li { font-size:14px; }
@@ -867,8 +880,9 @@ body.admin-open #eye-btn-fixed { right: calc(320px + var(--gap) + 12px); }
   </nav>
 </div>
 
-<!-- Gradient permanent sous le logo — lisibilité sur toutes les pages -->
+<!-- Gradients permanents — lisibilité logo (haut) et nav bar (bas) -->
 <div id="top-gradient"></div>
+<div id="bottom-gradient"></div>
 
 <!-- PAGES -->
 <div class="page active" id="page-pratiques">
