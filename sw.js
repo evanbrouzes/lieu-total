@@ -1,7 +1,7 @@
 // ─── SERVICE WORKER — Lieu Total ──────────────────────────────────────────────
 // Mise en cache des ressources principales pour fonctionnement hors ligne.
 // Version : changer ce numéro force la mise à jour du cache sur tous les appareils.
-const CACHE_NAME = 'lieu-total-v4';
+const CACHE_NAME = 'lieu-total-v6';
 
 // Fichiers à mettre en cache au premier chargement
 const BASE = '/lieu-total';
