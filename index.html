@@ -1462,16 +1462,16 @@ const LAYERS = [
    lstyle:{weight:0,stroke:false,fillColor:'#C8502A',fillOpacity:.35}},
   {id:'ressources', label:'Ressources & matériaux',color:'#B5834A', on:false, file:'ressources_et_materiaux.geojson',
    lstyle:{weight:0,stroke:false,fillColor:'#B5834A',fillOpacity:.35}},
-  {id:'sols',       label:'Sols construits',       color:'#AAAAAA', on:false,                         // fichier à venir
+  {id:'sols',       label:'Sols construits',       color:'#AAAAAA', on:false, file:'sols_construits.geojson',
    lstyle:{weight:0,stroke:false,fillColor:'#AAAAAA',fillOpacity:.45}},
   {id:'agricole',   label:'Terres agricoles',      color:'#C8B84A', on:false, file:'terres_agricoles.geojson',
    special:'hachure'},
   {id:'topo',       label:'Topographie',           color:'#8B6914', on:false, file:'topographie.geojson',
    lstyle:{weight:1.5,stroke:true,color:'#8B6914',dashArray:'4 6',fillOpacity:0,fill:false}},
-  {id:'ferree',     label:'Voie ferrée',            color:'#333333',                                   // fichier à venir
+  {id:'ferree',     label:'Voie ferrée',            color:'#333333', on:false, file:'voie_ferree.geojson',
    lstyle:{weight:3,stroke:true,color:'#333333',dashArray:'10 4',fillOpacity:0,fill:false}},
-  {id:'hydro',      label:'Hydrographie',           color:'#4A90D9',                                   // fichier à venir
-   lstyle:{weight:0,stroke:false,fillColor:'#4A90D9',fillOpacity:.5}},
+  {id:'hydro',      label:'Hydrographie',           color:'#4A90D9', on:false, file:'hydrographie.geojson',
+   lstyle:{weight:2.5,stroke:true,color:'#4A90D9',fillColor:'#4A90D9',fillOpacity:.4,opacity:.85}},
 ];
 
 // Points de démonstration hardcodés (ne jamais supprimer)
