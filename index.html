@@ -1781,7 +1781,7 @@ function initMap(){
         const gt=feat&&feat.geometry&&feat.geometry.type||'';
         if(gt.includes('Line')){
           const imp=parseInt(feat&&feat.properties&&feat.properties.IMPORTANCE)||5;
-          const w=imp===1?7:imp===2?5:imp===3?3.5:imp===4?2.2:1.2;
+          const w=imp===1?8:imp===2?6:imp===3?4.5:imp===4?3.5:2.5;
           return {weight:w,stroke:true,color:'#7A90A4',opacity:1,fill:false,fillOpacity:0};
         }
         return {weight:0,stroke:false,fillColor:'#7A90A4',fillOpacity:1};
