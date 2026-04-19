@@ -1764,8 +1764,8 @@ function initMap(){
       // Courbes de niveau : épaisseur selon zoom
       styleArg=()=>{
         const z=map?map.getZoom():13;
-        const w=z<=13?0.4:z<=14?0.6:z<=15?0.9:1.3;
-        return {weight:w,stroke:true,color:'#9A8E78',fill:false,fillOpacity:0};
+        const w=z<=13?0.3:z<=14?0.5:z<=15?0.7:1;
+        return {weight:w,stroke:true,color:'#9A8E78',dashArray:'2 4',fill:false,fillOpacity:0};
       };
     } else if(c.special==='line-ferree'){
       // Voie ferrée : épaisseur selon zoom
@@ -1781,7 +1781,7 @@ function initMap(){
         const gt=feat&&feat.geometry&&feat.geometry.type||'';
         if(gt.includes('Line')){
           const imp=parseInt(feat&&feat.properties&&feat.properties.IMPORTANCE)||5;
-          const w=imp===1?3.5:imp===2?2.5:imp===3?1.8:imp===4?1.2:0.7;
+          const w=imp===1?7:imp===2?5:imp===3?3.5:imp===4?2.2:1.2;
           return {weight:w,stroke:true,color:'#7A90A4',opacity:1,fill:false,fillOpacity:0};
         }
         return {weight:0,stroke:false,fillColor:'#7A90A4',fillOpacity:1};
