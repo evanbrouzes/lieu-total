@@ -1748,10 +1748,10 @@ function initMap(){
   if(mapInitialized)return;
   mapInitialized=true;
 
-  const bounds=L.latLngBounds(L.latLng(45.090,4.195),L.latLng(45.195,4.345));
+  const bounds=L.latLngBounds(L.latLng(45.045,4.130),L.latLng(45.240,4.415));
   map=L.map('map',{
-    center:[45.140,4.292],zoom:13,minZoom:12,maxZoom:17,
-    maxBounds:bounds,maxBoundsViscosity:0.7,
+    center:[45.142,4.273],zoom:12,minZoom:11,maxZoom:17,
+    maxBounds:bounds,maxBoundsViscosity:1,
     zoomControl:true,attributionControl:false
   });
   tileLayer=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).addTo(map);
