@@ -230,8 +230,9 @@ html,body { height:100%; font-family:var(--f); background:var(--bg); color:var(-
   box-shadow:var(--glass-shadow);
   border-radius:20px; min-width:220px; overflow:hidden;
 }
-/* Onglets Calque / Média */
-.lp-tabs { display:flex; padding:6px; gap:2px; border-bottom:1px solid var(--border); }
+/* Onglets Calque / Média — sert aussi de poignée de déplacement */
+.lp-tabs { display:flex; padding:6px; gap:2px; border-bottom:1px solid var(--border); cursor:grab; user-select:none; }
+.lp-tabs:active { cursor:grabbing; }
 .lp-tab {
   flex:1; font-family:var(--f); font-size:var(--fs-md); font-weight:700; letter-spacing:.01em;
   padding:8px 12px; border:none; background:none; border-radius:100px;
@@ -1855,6 +1856,31 @@ function initMap(){
         LAYERS.forEach(c=>lobj[c.id].remove());
       }
     });
+  })();
+
+  // ── Drag du panneau calques (desktop uniquement) ────────────────────────
+  (()=>{
+    const panel = document.getElementById('layers-panel');
+    const handle = panel.querySelector('.lp-tabs');
+    let dragging=false, ox=0, oy=0;
+    handle.addEventListener('mousedown', e=>{
+      // Ne pas déclencher si clic sur un bouton onglet
+      if(e.target.closest('.lp-tab')) return;
+      dragging=true;
+      const r=panel.getBoundingClientRect();
+      ox=e.clientX-r.left; oy=e.clientY-r.top;
+      panel.style.transition='none';
+      e.preventDefault();
+    });
+    document.addEventListener('mousemove', e=>{
+      if(!dragging) return;
+      let x=e.clientX-ox, y=e.clientY-oy;
+      // Garder dans la fenêtre
+      x=Math.max(0,Math.min(x,window.innerWidth-panel.offsetWidth));
+      y=Math.max(0,Math.min(y,window.innerHeight-panel.offsetHeight));
+      panel.style.left=x+'px'; panel.style.top=y+'px';
+    });
+    document.addEventListener('mouseup', ()=>{ dragging=false; });
   })();
 
   // Onglets panneau gauche (Calque / Média)
