@@ -1875,9 +1875,11 @@ function initMap(){
     document.addEventListener('mousemove', e=>{
       if(!dragging) return;
       let x=e.clientX-ox, y=e.clientY-oy;
-      // Garder dans la fenêtre
-      x=Math.max(0,Math.min(x,window.innerWidth-panel.offsetWidth));
-      y=Math.max(0,Math.min(y,window.innerHeight-panel.offsetHeight));
+      // Marges safe : logo en haut (76px), nav en bas (102px), bords 8px
+      const minX=8, maxX=window.innerWidth-panel.offsetWidth-110;
+      const minY=76, maxY=window.innerHeight-panel.offsetHeight-160;
+      x=Math.max(minX,Math.min(x,maxX));
+      y=Math.max(minY,Math.min(y,maxY));
       panel.style.left=x+'px'; panel.style.top=y+'px';
     });
     document.addEventListener('mouseup', ()=>{ dragging=false; });
