@@ -1748,9 +1748,9 @@ function initMap(){
   if(mapInitialized)return;
   mapInitialized=true;
 
-  const bounds=L.latLngBounds(L.latLng(45.045,4.130),L.latLng(45.240,4.415));
+  const bounds=L.latLngBounds(L.latLng(45.048,4.130),L.latLng(45.238,4.412));
   map=L.map('map',{
-    center:[45.142,4.273],zoom:12,minZoom:11,maxZoom:17,
+    center:[45.143,4.271],zoom:12,minZoom:10,maxZoom:17,
     maxBounds:bounds,maxBoundsViscosity:1,
     zoomControl:true,attributionControl:false
   });
@@ -1814,7 +1814,11 @@ function initMap(){
   });
   setTimeout(injectSVGPatterns,600);
   // Recalcul du rendu après montage complet
-  setTimeout(()=>{ map.invalidateSize(); console.log('[carte] invalidateSize après init'); }, 200);
+  setTimeout(()=>{
+    map.invalidateSize();
+    map.fitBounds(bounds, {padding:[0,0]});
+    console.log('[carte] invalidateSize + fitBounds après init');
+  }, 200);
 
   // Liste UI des couches dans le panneau gauche
   const llst=document.getElementById('llist');
