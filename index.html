@@ -1451,27 +1451,27 @@ const TYPE_ICON = {son:'son.svg', video:'video.svg', photo:'photo.svg', texte:'t
 
 // Couches GeoJSON — pour en ajouter une : une ligne ici + fichier dans RESSOURCES/COUCHES/GEOJSON/
 const LAYERS = [
-  // weight:0 + stroke:false = aplat sans contour (défaut pour zones remplies)
-  {id:'cimetiere',  label:'Cimetière',             color:'#9B89B4', on:false, file:'cimetiere.geojson',
-   lstyle:{weight:0,stroke:false,fillColor:'#9B89B4',fillOpacity:.35}},
-  {id:'sport',      label:'Équipements sportifs',  color:'#E8A0A0', on:false, file:'equipements_sportifs.geojson',
-   lstyle:{weight:0,stroke:false,fillColor:'#E8A0A0',fillOpacity:.35}},
-  {id:'forets',     label:'Forêts',                color:'#3D6B4F', on:false, file:'forets.geojson',
-   special:'stipple'},
-  {id:'mounas',     label:'Mounas',                color:'#C8502A', on:true,  file:'mounas.geojson',
-   lstyle:{weight:0,stroke:false,fillColor:'#C8502A',fillOpacity:.35}},
-  {id:'ressources', label:'Ressources & matériaux',color:'#B5834A', on:false, file:'ressources_et_materiaux.geojson',
-   lstyle:{weight:0,stroke:false,fillColor:'#B5834A',fillOpacity:.35}},
-  {id:'sols',       label:'Sols construits',       color:'#AAAAAA', on:false, file:'sols_construits.geojson',
-   lstyle:{weight:0,stroke:false,fillColor:'#AAAAAA',fillOpacity:.45}},
-  {id:'agricole',   label:'Terres agricoles',      color:'#C8B84A', on:false, file:'terres_agricoles.geojson',
-   special:'hachure'},
-  {id:'topo',       label:'Topographie',           color:'#8B6914', on:false, file:'topographie.geojson',
-   lstyle:{weight:1.5,stroke:true,color:'#8B6914',dashArray:'4 6',fillOpacity:0,fill:false}},
-  {id:'ferree',     label:'Voie ferrée',            color:'#333333', on:false, file:'voie_ferree.geojson',
-   lstyle:{weight:3,stroke:true,color:'#333333',dashArray:'10 4',fillOpacity:0,fill:false}},
-  {id:'hydro',      label:'Hydrographie',           color:'#4A90D9', on:false, file:'hydrographie.geojson',
-   lstyle:{weight:2.5,stroke:true,color:'#4A90D9',fillColor:'#4A90D9',fillOpacity:.4,opacity:.85}},
+  // Aplats opaques — weight:0 stroke:false = pas de contour
+  {id:'cimetiere',  label:'Cimetière',             color:'#8C8A98', on:false, file:'cimetiere.geojson',
+   lstyle:{weight:0,stroke:false,fillColor:'#8C8A98',fillOpacity:1}},
+  {id:'sport',      label:'Équipements sportifs',  color:'#C49898', on:false, file:'equipements_sportifs.geojson',
+   lstyle:{weight:0,stroke:false,fillColor:'#C49898',fillOpacity:1}},
+  {id:'forets',     label:'Forêts',                color:'#8A9082', on:false, file:'forets.geojson',
+   special:'p-foret'},
+  {id:'mounas',     label:'Mounas',                color:'#A87868', on:true,  file:'mounas.geojson',
+   lstyle:{weight:0,stroke:false,fillColor:'#A87868',fillOpacity:1}},
+  {id:'ressources', label:'Ressources & matériaux',color:'#9E8C74', on:false, file:'ressources_et_materiaux.geojson',
+   lstyle:{weight:0,stroke:false,fillColor:'#9E8C74',fillOpacity:1}},
+  {id:'sols',       label:'Sols construits',       color:'#B4B0AA', on:false, file:'sols_construits.geojson',
+   lstyle:{weight:0,stroke:false,fillColor:'#B4B0AA',fillOpacity:1}},
+  {id:'agricole',   label:'Terres agricoles',      color:'#B0A878', on:false, file:'terres_agricoles.geojson',
+   special:'p-agri'},
+  {id:'topo',       label:'Topographie',           color:'#9A8E78', on:false, file:'topographie.geojson',
+   special:'p-topo'},
+  {id:'ferree',     label:'Voie ferrée',            color:'#8A7060', on:false, file:'voie_ferree.geojson',
+   special:'p-ferree'},
+  {id:'hydro',      label:'Hydrographie',           color:'#7A90A4', on:false, file:'hydrographie.geojson',
+   lstyle:{weight:0,stroke:false,fillColor:'#7A90A4',fillOpacity:1}},
 ];
 
 // Points de démonstration hardcodés (ne jamais supprimer)
@@ -1548,32 +1548,43 @@ function injectSVGPatterns(){
   let defs=svgEl.querySelector('defs');
   if(!defs){defs=document.createElementNS('http://www.w3.org/2000/svg','defs');svgEl.insertBefore(defs,svgEl.firstChild);}
 
-  // ── Hachure horizontale — Terres agricoles ──────────────────────────────
-  if(!defs.querySelector('#hachure-agri')){
-    const pat=document.createElementNS('http://www.w3.org/2000/svg','pattern');
-    pat.setAttribute('id','hachure-agri');
-    pat.setAttribute('patternUnits','userSpaceOnUse');
-    pat.setAttribute('width','12'); pat.setAttribute('height','8');
-    const ln=document.createElementNS('http://www.w3.org/2000/svg','line');
-    ln.setAttribute('x1','0'); ln.setAttribute('y1','4');
-    ln.setAttribute('x2','12'); ln.setAttribute('y2','4');
-    ln.setAttribute('stroke','#C8B84A'); ln.setAttribute('stroke-width','1.5');
-    ln.setAttribute('opacity','0.7');
-    pat.appendChild(ln); defs.appendChild(pat);
+  // ── Helper : créer un élément SVG avec attributs ────────────────────────
+  const ns=(tag,attrs)=>{
+    const el=document.createElementNS('http://www.w3.org/2000/svg',tag);
+    Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));
+    return el;
+  };
+
+  // ── p-foret : fond #E8E6E0, petits points #8A9082 r=1.2, 8×8px ──────────
+  if(!defs.querySelector('#p-foret')){
+    const pat=ns('pattern',{id:'p-foret',patternUnits:'userSpaceOnUse',width:'8',height:'8'});
+    pat.appendChild(ns('rect',{width:'8',height:'8',fill:'#E8E6E0'}));
+    [[2,2],[6,6],[4,0],[0,4],[8,4],[4,8]].forEach(([cx,cy])=>
+      pat.appendChild(ns('circle',{cx,cy,r:'1.2',fill:'#8A9082'})));
+    defs.appendChild(pat);
   }
 
-  // ── Stippling points — Forêts ────────────────────────────────────────────
-  if(!defs.querySelector('#stipple-foret')){
-    const pat=document.createElementNS('http://www.w3.org/2000/svg','pattern');
-    pat.setAttribute('id','stipple-foret');
-    pat.setAttribute('patternUnits','userSpaceOnUse');
-    pat.setAttribute('width','14'); pat.setAttribute('height','14');
-    [[3,3],[10,8],[7,12],[1,9],[12,3],[5,7]].forEach(([cx,cy])=>{
-      const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
-      c.setAttribute('cx',cx); c.setAttribute('cy',cy); c.setAttribute('r','1.2');
-      c.setAttribute('fill','#3D6B4F'); c.setAttribute('opacity','0.65');
-      pat.appendChild(c);
-    });
+  // ── p-agri : fond #EDE9DC, diagonale #B0A878 sw=0.8, (0,8)→(8,0), 8×8px ─
+  if(!defs.querySelector('#p-agri')){
+    const pat=ns('pattern',{id:'p-agri',patternUnits:'userSpaceOnUse',width:'8',height:'8'});
+    pat.appendChild(ns('rect',{width:'8',height:'8',fill:'#EDE9DC'}));
+    pat.appendChild(ns('line',{x1:'0',y1:'8',x2:'8',y2:'0',stroke:'#B0A878','stroke-width':'0.8'}));
+    defs.appendChild(pat);
+  }
+
+  // ── p-topo : fond #EAE6DE, lignes horiz pointillées #9A8E78 sw=0.7, 10×6px
+  if(!defs.querySelector('#p-topo')){
+    const pat=ns('pattern',{id:'p-topo',patternUnits:'userSpaceOnUse',width:'10',height:'6'});
+    pat.appendChild(ns('rect',{width:'10',height:'6',fill:'#EAE6DE'}));
+    pat.appendChild(ns('line',{x1:'0',y1:'3',x2:'10',y2:'3',stroke:'#9A8E78','stroke-width':'0.7','stroke-dasharray':'3 3'}));
+    defs.appendChild(pat);
+  }
+
+  // ── p-ferree : fond #EAE4DC, tirets horiz #8A7060 sw=1.5, 10×8px ─────────
+  if(!defs.querySelector('#p-ferree')){
+    const pat=ns('pattern',{id:'p-ferree',patternUnits:'userSpaceOnUse',width:'10',height:'8'});
+    pat.appendChild(ns('rect',{width:'10',height:'8',fill:'#EAE4DC'}));
+    pat.appendChild(ns('line',{x1:'0',y1:'4',x2:'10',y2:'4',stroke:'#8A7060','stroke-width':'1.5','stroke-dasharray':'5 2'}));
     defs.appendChild(pat);
   }
 }
@@ -1749,10 +1760,9 @@ function initMap(){
   // Créer les couches GeoJSON vides + injecter les données déjà reçues (pendingData)
   LAYERS.forEach(c=>{
     let styleArg;
-    if(c.special==='hachure'){
-      styleArg=()=>({weight:0,stroke:false,fillColor:'url(#hachure-agri)',fillOpacity:1});
-    } else if(c.special==='stipple'){
-      styleArg=()=>({weight:0,stroke:false,fillColor:'url(#stipple-foret)',fillOpacity:1});
+    if(c.special){
+      const pid='url(#'+c.special+')';
+      styleArg=()=>({weight:0,stroke:false,fillColor:pid,fillOpacity:1});
     } else {
       styleArg=c.lstyle||{weight:0,stroke:false,fillColor:c.color,fillOpacity:.35};
     }
